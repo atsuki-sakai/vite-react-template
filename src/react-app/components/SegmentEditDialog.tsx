@@ -22,7 +22,7 @@ export default function SegmentEditDialog({ isOpen, onOpenChange, segment, onSub
     if (segment) {
       setContent(segment.content);
       setAnswer(segment.answer || '');
-      setKeywords(segment.keywords.join(', '));
+      setKeywords(segment.keywords?.join(', ') || '');
     } else {
       setContent('');
       setAnswer('');
