@@ -1,8 +1,11 @@
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { safeParseCreateDatasetRequest, safeParseCreateDocumentByTextRequest, UpdateDocumentByTextRequest, CreateSegmentRequest } from "../shared";
-import { DifyService } from "./services/DifyService";
+import { DifyService } from "../services/DifyService";
+import { createDb, DrizzleDB } from "../db";
+import { basicAuth } from "hono/basic-auth";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env } & { Variables: { db: DrizzleDB } }>();
 
 // API routes
 const api = new Hono<{ Bindings: Env }>();
@@ -16,6 +19,53 @@ function createDifyService(env: Env): DifyService {
   }
   return new DifyService(env.DIFY_API_KEY, "https://api.dify.ai/v1");
 }
+
+// Add Drizzle database middleware
+app.use("*", async (c, next) => {
+  const db = createDb(c.env.DB);
+  c.set("db", db);
+  await next();
+});
+
+
+app.onError((err, c) => {
+  // --- HTTPException の処理を追加 ---
+  // このようにしないとBasicAuthの認証がうまく動かない.
+  if (err instanceof HTTPException) {
+    return err.getResponse(); // 正しいレスポンスを返す
+  }
+  // ------------------------------------
+
+  console.error("Global error handler caught:", err);
+  // スタックトレースも出力 (任意)
+  if (err.stack) {
+    console.error("Error stack:", err.stack);
+  }
+
+  return c.json(
+    {
+      success: false,
+      errors: [{ code: 7000, message: "Internal Server Error" }],
+    },
+    500,
+  );
+});
+
+
+app.use("/*", basicAuth({
+  verifyUser: (username, password, c) => {
+    // 環境変数が設定されているか確認 (堅牢性向上)
+    const expectedUser = c.env.ADMIN_USER;
+    const expectedPass = c.env.ADMIN_PASSWORD;
+
+    if (expectedUser === undefined || expectedPass === undefined) {
+        console.error("ADMIN_USER or ADMIN_PASSWORD is not set in environment variables.");
+        return false;
+    }
+    return username === expectedUser && password === expectedPass;
+  }
+}));
+
 
 // Get knowledge list (datasets) with pagination
 api.get('/get-knowledge-list', async (c) => {

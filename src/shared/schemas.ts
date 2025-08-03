@@ -102,6 +102,24 @@ export const DifyDocumentSchema = z.object({
   file_id: z.string().optional(),
 });
 
+export const DifyChatRequestSchema = z.object({
+  inputs: z.record(z.string(), z.any()).optional(),
+  query: z.string(),
+  response_mode: z.literal("blocking"),
+  user: z.string(),
+  conversation_id: z.string().optional(),
+  files: z.array(z.object({
+    type: z.string(),
+    transfer_method: z.string(),
+    url: z.string(),
+  })).optional(),
+});
+
+export const DifyChatResponseSchema = z.object({
+  answer: z.string(),
+  conversation_id: z.string().optional(),
+});
+
 // Segment Schema
 export const DifySegmentSchema = z.object({
   id: z.string(),
@@ -233,6 +251,8 @@ export const DocumentSegmentsResponseSchema = z.object({
 });
 
 // Type inference from schemas
+export type DifyChatRequest = z.infer<typeof DifyChatRequestSchema>;
+export type DifyChatResponse = z.infer<typeof DifyChatResponseSchema>;
 export type DifyDataset = z.infer<typeof DifyDatasetSchema>;
 export type DifyDocument = z.infer<typeof DifyDocumentSchema>;
 export type DifySegment = z.infer<typeof DifySegmentSchema>;

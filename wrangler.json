@@ -12,5 +12,23 @@
     "directory": "./dist/client",
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
-  }
+  },
+  "vars": {
+    "DIFY_API_ENDPOINT": "https://api.dify.ai/v1"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "line-messages-db",
+      "database_id": "81ed8005-4033-4657-9281-51c8b07de255",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "workflows": [
+    {
+      "binding": "LINE_MESSAGE_WORKFLOW",
+      "name": "line-message-workflow",
+      "class_name": "LineMessageWorkflow"
+    }
+  ]
 }
