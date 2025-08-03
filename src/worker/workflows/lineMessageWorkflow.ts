@@ -1,6 +1,6 @@
 import { WorkflowEntrypoint, WorkflowStep, WorkflowEvent } from "cloudflare:workers";
 import { type LineMessageWorkflowParams } from "../types";
-import { DifyService } from "../../services/DifyService";
+import { createDifyService } from "../../services/DifyService";
 
 interface InsertLineMessage {
   conversation_id: string;
@@ -35,7 +35,7 @@ export class LineMessageWorkflow extends WorkflowEntrypoint<Env, LineMessageWork
         return { answer: "", conversation_id: conversationId };
       }
 
-      const difyService = new DifyService(env.DIFY_API_ENDPOINT, env.DIFY_API_KEY);
+      const difyService = createDifyService(env, "chat");
       return await difyService.processMessage(messageContent, conversationId, userId, imageUrl);
     });
 

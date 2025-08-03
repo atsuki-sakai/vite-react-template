@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { safeParseCreateDatasetRequest, safeParseCreateDocumentByTextRequest, UpdateDocumentByTextRequest, CreateSegmentRequest } from "../shared";
-import { DifyService } from "../services/DifyService";
+import { createDifyService } from "../services/DifyService";
 import { createDb, DrizzleDB } from "../db";
 import { basicAuth } from "hono/basic-auth";
 
@@ -10,15 +10,6 @@ const app = new Hono<{ Bindings: Env } & { Variables: { db: DrizzleDB } }>();
 // API routes
 const api = new Hono<{ Bindings: Env }>();
 
-/**
- * Helper function to create DifyService instance with error handling
- */
-function createDifyService(env: Env): DifyService {
-  if (!env.DIFY_API_KEY) {
-    throw new Error("DIFY_API_KEY environment variable is required");
-  }
-  return new DifyService(env.DIFY_API_KEY, "https://api.dify.ai/v1");
-}
 
 // Add Drizzle database middleware
 app.use("*", async (c, next) => {
@@ -73,7 +64,7 @@ api.get('/get-knowledge-list', async (c) => {
     const page = parseInt(c.req.query('page') || '1');
     const limit = parseInt(c.req.query('limit') || '20');
     
-    const difyService = createDifyService(c.env);
+    const difyService = createDifyService(c.env, "knowledge");
     const response = await difyService.getKnowledgeList(page, limit);
     return c.json(response);
   } catch (error) {
@@ -100,7 +91,7 @@ api.post('/datasets', async (c) => {
       }, 400);
     }
 
-    const difyService = createDifyService(c.env);
+    const difyService = createDifyService(c.env, "knowledge");
     const response = await difyService.createDataset(validationResult.data);
     return c.json(response);
   } catch (error) {
@@ -116,7 +107,7 @@ api.post('/datasets', async (c) => {
 api.get('/datasets/:datasetId', async (c) => {
   try {
     const datasetId = c.req.param('datasetId');
-    const difyService = createDifyService(c.env);
+    const difyService = createDifyService(c.env, "knowledge");
     const response = await difyService.getDataset(datasetId);
     return c.json(response);
   } catch (error) {
@@ -132,7 +123,7 @@ api.get('/datasets/:datasetId', async (c) => {
 api.delete('/datasets/:datasetId', async (c) => {
   try {
     const datasetId = c.req.param('datasetId');
-    const difyService = createDifyService(c.env);
+    const difyService = createDifyService(c.env, "knowledge");
     const response = await difyService.deleteDataset(datasetId);
     return c.json(response);
   } catch (error) {
@@ -151,7 +142,7 @@ api.get('/datasets/:datasetId/documents', async (c) => {
     const page = parseInt(c.req.query('page') || '1');
     const limit = parseInt(c.req.query('limit') || '20');
     
-    const difyService = createDifyService(c.env);
+    const difyService = createDifyService(c.env, "knowledge");
     const response = await difyService.getDocuments(datasetId, page, limit);
     return c.json(response);
   } catch (error) {
@@ -179,7 +170,7 @@ api.post('/datasets/:datasetId/documents/text', async (c) => {
       }, 400);
     }
     
-    const difyService = createDifyService(c.env);
+    const difyService = createDifyService(c.env, "knowledge");
     const response = await difyService.createDocumentByText(datasetId, validationResult.data);
     return c.json(response);
   } catch (error) {
@@ -197,7 +188,7 @@ api.post('/datasets/:datasetId/documents/file', async (c) => {
     const datasetId = c.req.param('datasetId');
     const formData = await c.req.formData();
     
-    const difyService = createDifyService(c.env);
+    const difyService = createDifyService(c.env, "knowledge");
     const response = await difyService.createDocumentByFile(datasetId, formData);
     return c.json(response);
   } catch (error) {
@@ -216,7 +207,7 @@ api.put('/datasets/:datasetId/documents/:documentId/text', async (c) => {
     const documentId = c.req.param('documentId');
     const body = await c.req.json() as UpdateDocumentByTextRequest;
     
-    const difyService = createDifyService(c.env);
+    const difyService = createDifyService(c.env, "knowledge");
     const response = await difyService.updateDocumentByText(datasetId, documentId, body);
     return c.json(response);
   } catch (error) {
@@ -235,7 +226,7 @@ api.put('/datasets/:datasetId/documents/:documentId/file', async (c) => {
     const documentId = c.req.param('documentId');
     const formData = await c.req.formData();
     
-    const difyService = createDifyService(c.env);
+    const difyService = createDifyService(c.env, "knowledge");
     const response = await difyService.updateDocumentByFile(datasetId, documentId, formData);
     return c.json(response);
   } catch (error) {
@@ -254,7 +245,7 @@ api.get('/datasets/:datasetId/documents/:documentId', async (c) => {
     const documentId = c.req.param('documentId');
     const metadata = c.req.query('metadata') || 'all';
     
-    const difyService = createDifyService(c.env);
+    const difyService = createDifyService(c.env, "knowledge");
     const response = await difyService.getSingleDocumentDetails(datasetId, documentId, metadata);
     return c.json(response);
   } catch (error) {
@@ -272,7 +263,7 @@ api.get('/datasets/:datasetId/documents/:documentId/status', async (c) => {
     const datasetId = c.req.param('datasetId');
     const documentId = c.req.param('documentId');
     
-    const difyService = createDifyService(c.env);
+    const difyService = createDifyService(c.env, "knowledge");
     const response = await difyService.getDocumentEmbeddingStatus(datasetId, documentId);
     return c.json(response);
   } catch (error) {
@@ -290,7 +281,7 @@ api.delete('/datasets/:datasetId/documents/:documentId', async (c) => {
     const datasetId = c.req.param('datasetId');
     const documentId = c.req.param('documentId');
     
-    const difyService = createDifyService(c.env);
+    const difyService = createDifyService(c.env, "knowledge");
     const response = await difyService.deleteDocument(datasetId, documentId);
     return c.json(response);
   } catch (error) {
@@ -308,7 +299,7 @@ api.get('/datasets/:datasetId/documents/:documentId/segments', async (c) => {
     const datasetId = c.req.param('datasetId');
     const documentId = c.req.param('documentId');
     
-    const difyService = createDifyService(c.env);
+    const difyService = createDifyService(c.env, "knowledge");
     const response = await difyService.getDocumentSegments(datasetId, documentId);
     return c.json(response);
   } catch (error) {
@@ -327,7 +318,7 @@ api.post('/datasets/:datasetId/documents/:documentId/segments', async (c) => {
     const documentId = c.req.param('documentId');
     const body = await c.req.json() as CreateSegmentRequest;
     
-    const difyService = createDifyService(c.env);
+    const difyService = createDifyService(c.env, "knowledge");
     const response = await difyService.createDocumentSegment(datasetId, documentId, body);
     return c.json(response);
   } catch (error) {
@@ -346,7 +337,7 @@ api.post('/datasets/:datasetId/documents/:documentId/segments/:segmentId', async
     const documentId = c.req.param('documentId');
     const segmentId = c.req.param('segmentId');
     
-    const difyService = createDifyService(c.env);
+    const difyService = createDifyService(c.env, "knowledge");
     const response = await difyService.updateDocumentSegment(datasetId, documentId, segmentId);
     return c.json(response);
   } catch (error) {
@@ -364,7 +355,7 @@ api.delete('/datasets/:datasetId/documents/:documentId/segments/:segmentId', asy
     const documentId = c.req.param('documentId');
     const segmentId = c.req.param('segmentId');
     
-    const difyService = createDifyService(c.env);
+    const difyService = createDifyService(c.env, "knowledge");
     const response = await difyService.deleteDocumentSegment(datasetId, documentId, segmentId);
     return c.json(response);
   } catch (error) {

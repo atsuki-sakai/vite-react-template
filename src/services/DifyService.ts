@@ -18,6 +18,22 @@ import {
 
 import type { AIResponse } from "../worker/types";
 
+
+/**
+ * Helper function to create DifyService instance with error handling
+ */
+export function createDifyService(env: Env, type: "chat" | "knowledge" = "knowledge"): DifyService {
+  let apiKey: string;
+  if (type === "chat") {
+    apiKey = env.DIFY_CHAT_API_KEY;
+  } else if (type === "knowledge") {
+    apiKey = env.DIFY_KNOWLEDGE_KEY;
+  } else {
+    throw new Error("Invalid Dify service type");
+  }
+  return new DifyService(apiKey, env.DIFY_API_ENDPOINT);
+}
+
 /**
  * DifyService - A robust service class for interacting with Dify API
  * 
