@@ -65,7 +65,7 @@
     "build": "tsc -b && vite build",
     "cf-typegen": "wrangler types",
     "check": "tsc && vite build && wrangler deploy --dry-run",
-    "deploy": "tsc -b && vite build && wrangler deploy",
+    "deploy": "wrangler deploy",
     "dev": "vite",
     "dev:worker": "wrangler dev",
     "dev:full": "concurrently \"npm run dev\" \"npm run dev:worker\"",
