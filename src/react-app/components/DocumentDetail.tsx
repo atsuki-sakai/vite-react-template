@@ -2,9 +2,11 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, FileText, Trash2, Edit, Download, Hash, Clock, Eye, PlusCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ArrowLeft, FileText, Trash2, Edit, Download, Hash, Clock, Eye, PlusCircle, Lock } from "lucide-react";
 import { useDifyApi } from "../../shared/hooks/useDifyApi";
 import { DifySegment, CreateSegmentRequest } from "../../shared/schemas";
+import { FEATURE_FLAGS, PREMIUM_FEATURE_MESSAGES } from "../../shared/constants";
 import SegmentEditDialog from './SegmentEditDialog';
 
 export default function DocumentDetail() {
@@ -25,6 +27,9 @@ export default function DocumentDetail() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isSegmentEditDialogOpen, setIsSegmentEditDialogOpen] = useState(false);
   const [selectedSegment, setSelectedSegment] = useState<DifySegment | null>(null);
+  
+  // Feature flag for premium features
+  const isPremiumFeaturesEnabled = FEATURE_FLAGS.ENABLE_DIFY_PREMIUM_FEATURES;
 
   const { data: dataset } = useDataset(datasetId!);
   const { data: document, isLoading: isDocumentLoading } = useDocumentDetails(datasetId!, documentId!, 'all');
@@ -56,27 +61,84 @@ export default function DocumentDetail() {
   const handleSaveSegment = async (data: CreateSegmentRequest) => {
     if (!datasetId || !documentId) return;
 
-    if (selectedSegment) {
-      // Dify API does not support updating segments directly.
-      // The workaround is to delete the existing segment and create a new one.
-      await deleteSegmentMutation.mutateAsync({ datasetId, documentId, segmentId: selectedSegment.id });
+    // Check if premium features are disabled
+    if (!isPremiumFeaturesEnabled) {
+      alert(PREMIUM_FEATURE_MESSAGES.SEGMENT_EDIT_DISABLED);
+      return;
     }
-    await createSegmentMutation.mutateAsync({ datasetId, documentId, request: data });
-    refetchSegments();
-    setIsSegmentEditDialogOpen(false);
+
+    try {
+      console.log('[DocumentDetail] handleSaveSegment - Starting segment save operation:', {
+        isEditing: !!selectedSegment,
+        segmentId: selectedSegment?.id,
+        datasetId,
+        documentId,
+        segmentData: data
+      });
+
+      if (selectedSegment) {
+        // Dify API does not support updating segments directly.
+        // The workaround is to delete the existing segment and create a new one.
+        console.log('[DocumentDetail] handleSaveSegment - Deleting existing segment:', selectedSegment.id);
+        await deleteSegmentMutation.mutateAsync({ datasetId, documentId, segmentId: selectedSegment.id });
+        console.log('[DocumentDetail] handleSaveSegment - Successfully deleted segment');
+      }
+
+      console.log('[DocumentDetail] handleSaveSegment - Creating new segment');
+      await createSegmentMutation.mutateAsync({ datasetId, documentId, request: data });
+      console.log('[DocumentDetail] handleSaveSegment - Successfully created segment');
+
+      // Refresh segments list and close dialog
+      refetchSegments();
+      setIsSegmentEditDialogOpen(false);
+      setSelectedSegment(null);
+
+      console.log('[DocumentDetail] handleSaveSegment - Operation completed successfully');
+    } catch (error) {
+      console.error('[DocumentDetail] handleSaveSegment - Error during segment save operation:', error);
+      
+      // Check if this is a 403 forbidden error (premium feature required)
+      if (error && typeof error === 'object' && 'message' in error && 
+          typeof error.message === 'string' && error.message.includes('403')) {
+        alert(PREMIUM_FEATURE_MESSAGES.SEGMENT_EDIT_DISABLED);
+      } else {
+        alert(`Failed to ${selectedSegment ? 'update' : 'create'} segment. Please try again.`);
+      }
+      
+      // Refresh segments to ensure UI is consistent with backend state
+      refetchSegments();
+    }
   };
 
   const handleDeleteSegment = async (segmentId: string) => {
     if (!datasetId || !documentId) return;
-    await deleteSegmentMutation.mutateAsync({ datasetId, documentId, segmentId });
-    refetchSegments();
+    
+    // Check if premium features are disabled
+    if (!isPremiumFeaturesEnabled) {
+      alert(PREMIUM_FEATURE_MESSAGES.SEGMENT_DELETE_DISABLED);
+      return;
+    }
+
+    try {
+      await deleteSegmentMutation.mutateAsync({ datasetId, documentId, segmentId });
+      refetchSegments();
+    } catch (error) {
+      console.error('[DocumentDetail] handleDeleteSegment - Error:', error);
+      // Check if this is a 403 forbidden error (premium feature required)
+      if (error && typeof error === 'object' && 'message' in error && 
+          typeof error.message === 'string' && error.message.includes('403')) {
+        alert(PREMIUM_FEATURE_MESSAGES.SEGMENT_DELETE_DISABLED);
+      } else {
+        alert('Failed to delete segment. Please try again.');
+      }
+    }
   };
 
   if (isDocumentLoading) {
     return (
       <div className="container mx-auto p-6 max-w-7xl">
         <div className="text-center py-12">
-          <p className="text-lg text-gray-600">Loading document...</p>
+          <p className="text-lg text-gray-600">ドキュメントを読み込み中...</p>
         </div>
       </div>
     );
@@ -203,11 +265,44 @@ export default function DocumentDetail() {
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Document Segments</h2>
-            <Button onClick={() => handleOpenSegmentDialog()}>
-              <PlusCircle className="w-4 h-4 mr-2" />
-              Add Segment
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Button 
+                      onClick={() => handleOpenSegmentDialog()} 
+                      disabled={!isPremiumFeaturesEnabled}
+                      className={!isPremiumFeaturesEnabled ? "opacity-50 cursor-not-allowed" : ""}
+                    >
+                      {!isPremiumFeaturesEnabled && <Lock className="w-4 h-4 mr-2" />}
+                      <PlusCircle className="w-4 h-4 mr-2" />
+                      Add Segment
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                {!isPremiumFeaturesEnabled && (
+                  <TooltipContent>
+                    <p>{PREMIUM_FEATURE_MESSAGES.SEGMENT_CREATE_DISABLED}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </div>
+          
+          {/* Premium Features Notice */}
+          {!isPremiumFeaturesEnabled && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center">
+                <Lock className="w-5 h-5 text-amber-600 mr-2" />
+                <div>
+                  <h3 className="text-sm font-medium text-amber-800">有料プラン限定機能</h3>
+                  <p className="text-sm text-amber-700 mt-1">
+                    セグメントの編集・追加・削除機能をご利用いただくには、Difyの有料プランが必要です。
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           
           {areSegmentsLoading ? (
             <div className="text-sm text-gray-500">Loading segments...</div>
@@ -238,12 +333,50 @@ export default function DocumentDetail() {
                       )}
                     </div>
                     <div className="flex items-center space-x-3">
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenSegmentDialog(segment)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteSegment(segment.id)}>
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleOpenSegmentDialog(segment)}
+                                disabled={!isPremiumFeaturesEnabled}
+                                className={!isPremiumFeaturesEnabled ? "opacity-50 cursor-not-allowed" : ""}
+                              >
+                                {!isPremiumFeaturesEnabled ? <Lock className="w-4 h-4" /> : <Edit className="w-4 h-4" />}
+                              </Button>
+                            </div>
+                          </TooltipTrigger>
+                          {!isPremiumFeaturesEnabled && (
+                            <TooltipContent>
+                              <p>{PREMIUM_FEATURE_MESSAGES.SEGMENT_EDIT_DISABLED}</p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleDeleteSegment(segment.id)}
+                                disabled={!isPremiumFeaturesEnabled}
+                                className={!isPremiumFeaturesEnabled ? "opacity-50 cursor-not-allowed" : ""}
+                              >
+                                {!isPremiumFeaturesEnabled ? <Lock className="w-4 h-4" /> : <Trash2 className="w-4 h-4 text-red-500" />}
+                              </Button>
+                            </div>
+                          </TooltipTrigger>
+                          {!isPremiumFeaturesEnabled && (
+                            <TooltipContent>
+                              <p>{PREMIUM_FEATURE_MESSAGES.SEGMENT_DELETE_DISABLED}</p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </div>
                   
