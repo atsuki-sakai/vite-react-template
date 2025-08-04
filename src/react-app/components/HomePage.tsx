@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Database, Plus, Trash2, MoreVertical, Copy, ExternalLink, FileText, Type as Letters, Lock, AppWindow, Cog, BrainCircuit, Calendar, Clock, RefreshCw, TorusIcon
+  Database, Plus, Trash2, MoreVertical, Copy, ExternalLink, FileText, Type as Letters, Lock, AppWindow, Cog, BrainCircuit, Calendar, Clock, RefreshCw, TorusIcon, MessageSquare
 } from "lucide-react";
 import { DifyDataset } from "../../shared/schemas";
 import { toast } from "sonner";
@@ -121,25 +121,43 @@ import { useDifyApi } from "../../shared/hooks/useDifyApi";
       <div className="flex flex-col space-y-8">
         {/* Header */}
         <div className="text-center py-6">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">Dify Knowledge Base</h1>
-          <p className="mt-4 text-lg text-gray-600">Browse and manage your Dify datasets with ease.</p>
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">Dify ナレッジベース</h1>
+          <p className="mt-4 text-lg text-gray-600">Difyデータセットを簡単に閲覧・管理できます。</p>
+          <div className="mt-6">
+            <Button
+              onClick={() => navigate('/chat-history')}
+              variant="outline"
+              className="flex items-center space-x-2"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>チャット履歴を表示</span>
+            </Button>
+          </div>
         </div>
 
 
         {/* Content */}
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <h2 className="text-3xl font-semibold tracking-tight">Knowledge Datasets</h2>
+            <h2 className="text-3xl font-semibold tracking-tight">ナレッジデータセット</h2>
             <div className="flex space-x-2">
               <Button
-                onClick={() => refetchKnowledge()}
+                onClick={async () => {
+                  try {
+                    await refetchKnowledge();
+                    toast.success('データセットリストを更新しました');
+                  } catch (error) {
+                    console.error('Failed to refresh knowledge list:', error);
+                    toast.error('更新に失敗しました');
+                  }
+                }}
                 disabled={loadingKnowledge}
                 variant="outline"
                 className="flex items-center space-x-2"
                 aria-label="Refresh datasets"
               >
                 <RefreshCw className={`w-4 h-4 ${loadingKnowledge ? "animate-spin" : ""}`} />
-                <span>{loadingKnowledge ? "Loading..." : "Refresh"}</span>
+                <span>{loadingKnowledge ? "読み込み中..." : "更新"}</span>
               </Button>
 
               {/* Create dataset */}
@@ -150,21 +168,21 @@ import { useDifyApi } from "../../shared/hooks/useDifyApi";
                 <DialogTrigger asChild>
                   <Button className="flex items-center space-x-2">
                     <Plus className="w-4 h-4" />
-                    <span>Create Dataset</span>
+                    <span>データセット作成</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Create New Dataset</DialogTitle>
+                    <DialogTitle>新しいデータセットを作成</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="dataset-name" className="block text-sm font-medium mb-2">
-                        Dataset Name
+                        データセット名
                       </label>
                       <Input
                         id="dataset-name"
-                        placeholder="Enter dataset name"
+                        placeholder="データセット名を入力"
                         value={newDatasetName}
                         onChange={(e) => setNewDatasetName(e.target.value)}
                         aria-invalid={!!createError}
@@ -172,11 +190,11 @@ import { useDifyApi } from "../../shared/hooks/useDifyApi";
                     </div>
                     <div>
                       <label htmlFor="dataset-description" className="block text-sm font-medium mb-2">
-                        Description
+                        説明
                       </label>
                       <Textarea
                         id="dataset-description"
-                        placeholder="Enter dataset description"
+                        placeholder="データセットの説明を入力"
                         value={newDatasetDescription}
                         onChange={(e) => setNewDatasetDescription(e.target.value)}
                         rows={3}
@@ -193,13 +211,13 @@ import { useDifyApi } from "../../shared/hooks/useDifyApi";
                           resetCreateForm();
                         }}
                       >
-                        Cancel
+                        キャンセル
                       </Button>
                       <Button
                         onClick={createDataset}
                         disabled={!newDatasetName.trim() || createLoading}
                       >
-                        {createLoading ? "Creating..." : "Create Dataset"}
+                        {createLoading ? "作成中..." : "データセット作成"}
                       </Button>
                     </div>
                   </div>
@@ -210,7 +228,7 @@ import { useDifyApi } from "../../shared/hooks/useDifyApi";
               <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Delete Dataset</DialogTitle>
+                    <DialogTitle>データセットの削除</DialogTitle>
                     <DialogDescription>
                       以下のデータセットを削除します。この操作は取り消せません。
                       <br />
@@ -223,7 +241,7 @@ import { useDifyApi } from "../../shared/hooks/useDifyApi";
                   </DialogHeader>
                   <div className="space-y-3">
                     <Input
-                      placeholder="Type dataset name to confirm"
+                      placeholder="確認のためデータセット名を入力"
                       value={deleteConfirmText}
                       onChange={(e) => setDeleteConfirmText(e.target.value)}
                       aria-label="Confirm dataset name"
@@ -238,14 +256,14 @@ import { useDifyApi } from "../../shared/hooks/useDifyApi";
                         setDeleteConfirmText("");
                       }}
                     >
-                      Cancel
+                      キャンセル
                     </Button>
                     <Button
                       variant="destructive"
                       onClick={confirmDeleteDataset}
                       disabled={!isDeleteConfirmOk || deleteLoading}
                     >
-                      {deleteLoading ? "Deleting..." : "Delete Dataset"}
+                      {deleteLoading ? "削除中..." : "データセット削除"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -321,7 +339,7 @@ import { useDifyApi } from "../../shared/hooks/useDifyApi";
                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                           <DropdownMenuItem onClick={() => navigate(`/datasets/${dataset.id}`)}>
                             <ExternalLink className="w-4 h-4 mr-2" />
-                            Open Details
+                            詳細を開く
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={async () => {
@@ -330,29 +348,29 @@ import { useDifyApi } from "../../shared/hooks/useDifyApi";
                             }}
                           >
                             <Copy className="w-4 h-4 mr-2" />
-                            Copy ID
+                            IDをコピー
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-red-600 focus:text-red-600"
                             onClick={() => handleDeleteDataset(dataset)}
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
+                            削除
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
 
-                    <p className="text-gray-600 text-sm mb-4 h-10 line-clamp-2">{dataset.description || "No description provided."}</p>
+                    <p className="text-gray-600 text-sm mb-4 h-10 line-clamp-2">{dataset.description || "説明が提供されていません。"}</p>
 
                     <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm text-gray-700 mb-4">
                       <div className="flex items-center space-x-2" title="Document Count">
                         <FileText className="w-4 h-4 text-gray-500" />
-                        <span>{dataset.document_count ?? 0} docs</span>
+                        <span>{dataset.document_count ?? 0} 文書</span>
                       </div>
                       <div className="flex items-center space-x-2" title="Word Count">
                         <Letters className="w-4 h-4 text-gray-500" />
-                        <span>{(dataset.word_count ?? 0).toLocaleString()} words</span>
+                        <span>{(dataset.word_count ?? 0).toLocaleString()} 単語</span>
                       </div>
                       <div className="flex items-center space-x-2" title="Linked Apps">
                         <AppWindow className="w-4 h-4 text-gray-500" />
@@ -396,14 +414,14 @@ import { useDifyApi } from "../../shared/hooks/useDifyApi";
           ) : (
             <div className="text-center py-16 col-span-full">
               <Database className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No datasets found</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">データセットが見つかりません</h3>
               <p className="mt-1 text-sm text-gray-500">
-                Get started by refreshing the datasets or creating a new one.
+                データセットを更新するか、新しいものを作成して始めましょう。
               </p>
               <div className="mt-6">
                 <Button onClick={() => setIsCreateDialogOpen(true)} className="inline-flex items-center">
                   <Plus className="w-4 h-4 mr-2" />
-                  Create Dataset
+                  データセット作成
                 </Button>
               </div>
             </div>
