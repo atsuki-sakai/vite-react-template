@@ -19,7 +19,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "line_messages",
+      "database_name": "line-messages-db",
       "database_id": "81ed8005-4033-4657-9281-51c8b07de255",
       "migrations_dir": "migrations"
     }
