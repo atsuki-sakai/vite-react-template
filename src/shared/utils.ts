@@ -1,3 +1,10 @@
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
 export const formatDate = (timestamp: number | null) => {
     if (!timestamp) return "N/A";
     const date = new Date(timestamp * 1000);
