@@ -4,16 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, FileText, Trash2, Edit, Plus, Upload } from "lucide-react";
+import { ArrowLeft, FileText, Trash2, Plus, Upload } from "lucide-react";
 import { DifyDocument } from "../../shared/schemas";
 import { useDifyApi } from "../../shared/hooks/useDifyApi";
+import { toast } from "sonner";
 
 export default function DatasetDetail() {
   const { datasetId } = useParams();
   const navigate = useNavigate();
   const { useDataset, useDocuments } = useDifyApi();
 
-  const { data: dataset, isLoading: loadingDataset, refetch: refetchDataset } = useDataset(datasetId ?? "");
+  const { data: dataset, isLoading: loadingDataset, refetch: refetchDataset } = useDataset(datasetId!);
   const { data: documents, isLoading: loadingDocuments, refetch: refetchDocuments } = useDocuments(dataset?.id ?? "");
 
   const [selectedDocument, setSelectedDocument] = useState<DifyDocument | null>(null);
@@ -31,7 +32,6 @@ export default function DatasetDetail() {
 
   const confirmDeleteDataset = async () => {
     if (!datasetId) return;
-    
     try {
       const response = await fetch(`/api/datasets/${datasetId}`, {
         method: 'DELETE'
@@ -44,8 +44,10 @@ export default function DatasetDetail() {
         console.log("Dataset deleted:", data);
         navigate('/'); // Navigate back to home page
       }
+      toast.success("データセットを削除しました");
     } catch (error) {
       console.error("Error deleting dataset:", error);
+      toast.error("データセットの削除に失敗しました");
     } finally {
       setIsDeleteDialogOpen(false);
     }
@@ -71,17 +73,17 @@ export default function DatasetDetail() {
     if (!datasetId) return;
     
     if (!documentName.trim()) {
-      alert('Please enter a document name');
+      toast.error('ドキュメント名を入力してください');
       return;
     }
 
     if (documentType === 'text' && !documentText.trim()) {
-      alert('Please enter document text');
+      toast.error('ドキュメントのテキストを入力してください');
       return;
     }
 
     if (documentType === 'file' && !selectedFile) {
-      alert('Please select a file');
+      toast.error('ファイルを選択してください');
       return;
     }
 
@@ -128,23 +130,23 @@ export default function DatasetDetail() {
         console.log('Raw response:', responseText);
         
         if (!responseText) {
-          throw new Error('Empty response from server');
+          throw new Error('サーバーからの空のレスポンス');
         }
         
         data = JSON.parse(responseText);
       } catch (parseError) {
         console.error('JSON parse error:', parseError);
-        alert('Server returned invalid response. Please try again.');
+        toast.error('サーバーから無効なレスポンスが返されました。もう一度お試しください。');
         return;
       }
       
       if (!response.ok) {
         console.error("HTTP error:", response.status, response.statusText);
         console.error("API error response:", data);
-        alert(`Failed to create document: HTTP ${response.status} - ${data?.error || data?.message || 'Unknown error'}`);
+        toast.error(`ドキュメントの作成に失敗しました: HTTP ${response.status} - ${data?.error || data?.message || '不明なエラー'}`);
       } else if (data.error) {
         console.error("Failed to create document:", data.error);
-        alert(`Failed to create document: ${data.error}`);
+        toast.error(`ドキュメントの作成に失敗しました: ${data.error}`);
       } else {
         console.log("Document created:", data);
         setIsAddDocumentDialogOpen(false);
@@ -153,7 +155,7 @@ export default function DatasetDetail() {
       }
     } catch (error) {
       console.error("Error creating document:", error);
-      alert('Error creating document. Please try again.');
+      toast.error('ドキュメントの作成中にエラーが発生しました。もう一度お試しください。');
     } finally {
       setIsCreatingDocument(false);
     }
@@ -163,9 +165,9 @@ export default function DatasetDetail() {
     return (
       <div className="container mx-auto p-6 max-w-7xl">
         <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900">Dataset not found</h3>
+          <h3 className="text-lg font-medium text-gray-900">データセットが見つかりません</h3>
           <p className="mt-1 text-sm text-gray-500">
-            The requested dataset could not be found.
+            リクエストされたデータセットが見つかりませんでした。
           </p>
           <Button
             onClick={() => navigate('/')}
@@ -173,7 +175,7 @@ export default function DatasetDetail() {
             variant="outline"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Datasets
+            データセットに戻る
           </Button>
         </div>
       </div>
@@ -199,12 +201,9 @@ export default function DatasetDetail() {
             </div>
           </div>
           <div className="flex space-x-2">
-            <Button variant="outline" size="icon">
-              <Edit className="w-4 h-4" />
-            </Button>
             <Button 
-              variant="outline" 
-              size="icon"
+              variant="destructive" 
+              size="sm"
               onClick={handleDeleteDataset}
             >
               <Trash2 className="w-4 h-4" />
@@ -214,18 +213,18 @@ export default function DatasetDetail() {
 
         {/* Dataset Info */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold mb-4">Dataset Information</h2>
+          <h2 className="text-xl font-semibold mb-4">データセット情報</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <span className="font-medium text-gray-700">Documents:</span>
+              <span className="font-medium text-gray-700">ドキュメント数:</span>
               <p className="text-2xl font-bold text-blue-600">{dataset.document_count}</p>
             </div>
             <div>
-              <span className="font-medium text-gray-700">Total Words:</span>
+              <span className="font-medium text-gray-700">総単語数:</span>
               <p className="text-2xl font-bold text-green-600">{(dataset.word_count || 0).toLocaleString()}</p>
             </div>
             <div>
-              <span className="font-medium text-gray-700">Permission:</span>
+              <span className="font-medium text-gray-700">権限:</span>
               <p className="text-lg font-medium text-gray-900">{dataset.permission}</p>
             </div>
           </div>
@@ -234,21 +233,25 @@ export default function DatasetDetail() {
         {/* Documents Section */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-semibold">Documents</h2>
+            <h2 className="text-2xl font-semibold">ドキュメント</h2>
             <div className="flex space-x-2">
               <Button
-                onClick={() => refetchDocuments()}
+                onClick={() => {
+                  refetchDocuments();
+                  refetchDataset();
+                  toast.success("ドキュメントを再読み込みしました");
+                }}
                 disabled={loadingDocuments || loadingDataset}
                 variant="outline"
               >
-                {loadingDocuments || loadingDataset ? "Loading..." : "Refresh"}
+                {loadingDocuments || loadingDataset ? "読み込み中..." : "再読み込み"}
               </Button>
               <Button 
                 className="flex items-center space-x-2"
                 onClick={handleAddDocument}
               >
                 <Plus className="w-4 h-4" />
-                <span>Add Document</span>
+                <span>ドキュメント追加</span>
               </Button>
             </div>
           </div>
@@ -266,42 +269,41 @@ export default function DatasetDetail() {
                       <h3 className="text-lg font-medium text-gray-900">{doc.name}</h3>
                       <div className="mt-2 grid grid-cols-4 gap-4 text-sm text-gray-500">
                         <div>
-                          <span className="font-medium">Characters:</span> {(doc.character_count || 0).toLocaleString()}
+                          <span className="font-medium">文字数:</span> {(doc.character_count || 0).toLocaleString()}
                         </div>
                         <div>
-                          <span className="font-medium">Tokens:</span> {(doc.tokens || 0).toLocaleString()}
+                          <span className="font-medium">トークン数:</span> {(doc.tokens || 0).toLocaleString()}
                         </div>
                         <div>
-                          <span className="font-medium">Status:</span>
+                          <span className="font-medium">ステータス:</span>
                           <span className={`ml-1 px-2 py-1 rounded-full text-xs ${
                             doc.processing_status === 'completed' ? 'bg-green-100 text-green-800' :
                             doc.processing_status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
                             doc.processing_status === 'error' ? 'bg-red-100 text-red-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
-                            {doc.processing_status}
+                            {doc.processing_status === 'completed' ? '完了' :
+                             doc.processing_status === 'processing' ? '処理中' :
+                             doc.processing_status === 'error' ? 'エラー' :
+                             doc.processing_status}
                           </span>
                         </div>
                         <div>
-                          <span className="font-medium">Indexing:</span>
+                          <span className="font-medium">インデックス作成:</span>
                           <span className={`ml-1 px-2 py-1 rounded-full text-xs ${
                             doc.indexing_status === 'completed' ? 'bg-green-100 text-green-800' :
                             doc.indexing_status === 'processing' || doc.indexing_status === 'waiting' ? 'bg-yellow-100 text-yellow-800' :
                             'bg-red-100 text-red-800'
                           }`}>
-                            {doc.indexing_status}
+                            {doc.indexing_status === 'completed' ? '完了' :
+                             doc.indexing_status === 'processing' ? '処理中' :
+                             doc.indexing_status === 'waiting' ? '待機中' :
+                             doc.indexing_status}
                           </span>
                         </div>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <Button variant="outline" size="icon" className="h-8 w-8">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="outline" size="icon" className="h-8 w-8">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                   
                   </div>
                 </div>
               ))}
@@ -309,9 +311,9 @@ export default function DatasetDetail() {
           ) : (
             <div className="text-center py-12">
               <FileText className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No documents found</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">ドキュメントが見つかりません</h3>
               <p className="mt-1 text-sm text-gray-500">
-                Add documents to this dataset to get started.
+                このデータセットにドキュメントを追加して開始してください。
               </p>
             </div>
           )}
@@ -321,46 +323,49 @@ export default function DatasetDetail() {
         {selectedDocument && (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">Document Content: {selectedDocument.name}</h2>
+              <h2 className="text-2xl font-semibold">ドキュメント内容: {selectedDocument.name}</h2>
               <Button
                 variant="outline"
                 onClick={() => setSelectedDocument(null)}
               >
-                Close
+                閉じる
               </Button>
             </div>
 
             {loadingDocuments ? (
               <div className="text-center py-12">
-                <p>Loading document content...</p>
+                <p>ドキュメント内容を読み込み中...</p>
               </div>
             ) : (
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                   <div>
-                    <span className="font-medium text-gray-700">Characters:</span>
+                    <span className="font-medium text-gray-700">文字数:</span>
                     <p className="text-lg font-semibold text-blue-600">{(selectedDocument.character_count || 0).toLocaleString()}</p>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-700">Tokens:</span>
+                    <span className="font-medium text-gray-700">トークン数:</span>
                     <p className="text-lg font-semibold text-green-600">{(selectedDocument.tokens || 0).toLocaleString()}</p>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-700">Status:</span>
+                    <span className="font-medium text-gray-700">ステータス:</span>
                     <span className={`ml-1 px-2 py-1 rounded-full text-xs ${
                       selectedDocument.processing_status === 'completed' ? 'bg-green-100 text-green-800' :
                       selectedDocument.processing_status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
                       selectedDocument.processing_status === 'error' ? 'bg-red-100 text-red-800' :
                       'bg-gray-100 text-gray-800'
                     }`}>
-                      {selectedDocument.processing_status}
+                      {selectedDocument.processing_status === 'completed' ? '完了' :
+                       selectedDocument.processing_status === 'processing' ? '処理中' :
+                       selectedDocument.processing_status === 'error' ? 'エラー' :
+                       selectedDocument.processing_status}
                     </span>
                   </div>
                 </div>
 
                 {selectedDocument.name ? (
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Content:</h3>
+                    <h3 className="text-lg font-semibold mb-3">内容:</h3>
                     <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
                       <pre className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
                         {selectedDocument.name}
@@ -369,7 +374,7 @@ export default function DatasetDetail() {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-gray-500">No content available for this document.</p>
+                    <p className="text-gray-500">このドキュメントにはコンテンツがありません。</p>
                   </div>
                 )}
               </div>
@@ -381,9 +386,9 @@ export default function DatasetDetail() {
         <Dialog open={isAddDocumentDialogOpen} onOpenChange={setIsAddDocumentDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Add New Document</DialogTitle>
+              <DialogTitle>新しいドキュメントを追加</DialogTitle>
               <DialogDescription>
-                Add a new document to "{dataset.name}" by entering text or uploading a file.
+                "{dataset.name}"にテキストを入力またはファイルをアップロードして新しいドキュメントを追加します。
               </DialogDescription>
             </DialogHeader>
             
@@ -396,7 +401,7 @@ export default function DatasetDetail() {
                   className="flex items-center space-x-2"
                 >
                   <FileText className="w-4 h-4" />
-                  <span>Text</span>
+                  <span>テキスト</span>
                 </Button>
                 <Button
                   variant={documentType === 'file' ? 'default' : 'outline'}
@@ -404,17 +409,17 @@ export default function DatasetDetail() {
                   className="flex items-center space-x-2"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>File Upload</span>
+                  <span>ファイルアップロード</span>
                 </Button>
               </div>
 
               {/* Document Name Input */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Document Name</label>
+                <label className="text-sm font-medium">ドキュメント名</label>
                 <Input
                   value={documentName}
                   onChange={(e) => setDocumentName(e.target.value)}
-                  placeholder="Enter document name"
+                  placeholder="ドキュメント名を入力"
                   className="w-full"
                 />
               </div>
@@ -422,11 +427,11 @@ export default function DatasetDetail() {
               {/* Text Input */}
               {documentType === 'text' && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Text Content</label>
+                  <label className="text-sm font-medium">テキスト内容</label>
                   <Textarea
                     value={documentText}
                     onChange={(e) => setDocumentText(e.target.value)}
-                    placeholder="Enter document text content..."
+                    placeholder="ドキュメントのテキスト内容を入力..."
                     rows={8}
                     className="w-full"
                   />
@@ -436,7 +441,7 @@ export default function DatasetDetail() {
               {/* File Upload */}
               {documentType === 'file' && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">File</label>
+                  <label className="text-sm font-medium">ファイル</label>
                   <Input
                     type="file"
                     onChange={handleFileChange}
@@ -445,7 +450,7 @@ export default function DatasetDetail() {
                   />
                   {selectedFile && (
                     <p className="text-sm text-gray-500">
-                      Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+                      選択済み: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
                     </p>
                   )}
                 </div>
@@ -458,13 +463,13 @@ export default function DatasetDetail() {
                 onClick={() => setIsAddDocumentDialogOpen(false)}
                 disabled={isCreatingDocument}
               >
-                Cancel
+                キャンセル
               </Button>
               <Button
                 onClick={createDocument}
                 disabled={isCreatingDocument}
               >
-                {isCreatingDocument ? "Creating..." : "Create Document"}
+                {isCreatingDocument ? "作成中..." : "ドキュメント作成"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -474,9 +479,9 @@ export default function DatasetDetail() {
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Delete Dataset</DialogTitle>
+              <DialogTitle>データセットを削除</DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete "{dataset.name}"? This action cannot be undone and will permanently remove all documents and segments in this dataset.
+                "{dataset.name}"を削除してもよろしいですか？この操作は元に戻すことができず、このデータセット内のすべてのドキュメントとセグメントが完全に削除されます。
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -484,13 +489,13 @@ export default function DatasetDetail() {
                 variant="outline"
                 onClick={() => setIsDeleteDialogOpen(false)}
               >
-                Cancel
+                キャンセル
               </Button>
               <Button
                 variant="destructive"
                 onClick={confirmDeleteDataset}
               >
-                Delete Dataset
+                データセット削除
               </Button>
             </DialogFooter>
           </DialogContent>
