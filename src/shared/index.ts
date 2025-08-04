@@ -8,3 +8,6 @@ export * from './schemas';
 
 // Export hooks for frontend usage
 export * from './hooks/useDifyApi';
+
+// Export constants and configuration
+export * from './constants';
