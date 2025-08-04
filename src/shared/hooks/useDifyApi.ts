@@ -56,7 +56,7 @@ const apiCall = async <T>(
 export function useDifyApi() {
   const queryClient = useQueryClient();
 
-  const useKnowledgeList = (page = 1, limit = 20) => {
+  const useKnowledgeList = (page = 1, limit = 100) => {
     return useQuery({
       queryKey: ['knowledgeList', page, limit],
       queryFn: () => apiCall<DifyDataset[]>(
