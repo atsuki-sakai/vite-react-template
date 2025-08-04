@@ -14,10 +14,25 @@ import {
   safeParseDifyDocument,
   DifyChatRequest,
   DifyChatResponse,
+  FEATURE_FLAGS,
+  PREMIUM_FEATURE_MESSAGES,
+  API_ERROR_CODES,
 } from "../shared";
-
 import type { AIResponse } from "../worker/types";
+import type { D1Database } from "@cloudflare/workers-types";
+import type { Workflow } from "@cloudflare/workers-types";
 
+interface Env {
+  LINE_CHANNEL_SECRET: string;
+  LINE_CHANNEL_ACCESS_TOKEN: string;
+  DIFY_CHAT_API_KEY: string;
+  DIFY_KNOWLEDGE_KEY: string;
+  DIFY_API_ENDPOINT: string;
+  ADMIN_USER: string;
+  ADMIN_PASSWORD: string;
+  DB: D1Database;
+  LINE_MESSAGE_WORKFLOW: Workflow;
+}
 
 /**
  * Helper function to create DifyService instance with error handling
@@ -731,17 +746,29 @@ export class DifyService {
   /**
    * Create document segments
    */
-  async createDocumentSegment(datasetId: string, documentId: string, request: CreateSegmentRequest): Promise<DifyApiResponse<DifySegment[]>> {
+  async createDocumentSegments(datasetId: string, documentId: string, request: CreateSegmentRequest): Promise<DifyApiResponse<DifySegment[]>> {
+    // Check if premium features are enabled
+    if (!FEATURE_FLAGS.ENABLE_DIFY_PREMIUM_FEATURES) {
+      console.warn('[DifyService] createDocumentSegments - Premium features are disabled');
+      return {
+        error: API_ERROR_CODES.PREMIUM_FEATURE_REQUIRED,
+        code: API_ERROR_CODES.FORBIDDEN.toString(),
+        message: PREMIUM_FEATURE_MESSAGES.SEGMENT_CREATE_DISABLED
+      };
+    }
+
     if (!datasetId?.trim() || !documentId?.trim()) {
-      console.error('[DifyService] createDocumentSegment - Dataset ID and Document ID are required');
+      console.error('[DifyService] createDocumentSegments - Dataset ID and Document ID are required');
       return {
         error: 'Validation failed',
         message: 'Dataset ID and Document ID are required'
       };
     }
 
+    console.log('[DifyService] createDocumentSegments - Request data:', JSON.stringify(request, null, 2));
+
     if (!request.segments || !Array.isArray(request.segments) || request.segments.length === 0) {
-      console.error('[DifyService] createDocumentSegment - Segments array is required');
+      console.error('[DifyService] createDocumentSegments - Segments array is required', request);
       return {
         error: 'Validation failed',
         message: 'Segments array is required and cannot be empty'
@@ -749,15 +776,18 @@ export class DifyService {
     }
 
     // Validate each segment has required content
-    for (const segment of request.segments) {
+    for (let i = 0; i < request.segments.length; i++) {
+      const segment = request.segments[i];
       if (!segment.content?.trim()) {
-        console.error('[DifyService] createDocumentSegment - All segments must have content');
+        console.error(`[DifyService] createDocumentSegments - Segment ${i} must have content:`, segment);
         return {
           error: 'Validation failed',
-          message: 'All segments must have non-empty content'
+          message: `Segment ${i + 1} must have non-empty content`
         };
       }
     }
+
+    console.log(`[DifyService] createDocumentSegments - Creating ${request.segments.length} segments for document ${documentId}`);
 
     return this.makeRequest<DifySegment[]>(
       `/datasets/${datasetId}/documents/${documentId}/segments`,
@@ -765,7 +795,16 @@ export class DifyService {
         method: 'POST',
         body: JSON.stringify(request)
       },
-      `Create segments for document ${documentId} in dataset ${datasetId}`
+      `Create segments for document ${documentId} in dataset ${datasetId}`,
+      (data) => {
+        console.log('[DifyService] createDocumentSegments - Response data:', JSON.stringify(data, null, 2));
+        // Validate that we got an array of segments back
+        if (Array.isArray(data)) {
+          return { success: true, data: data as DifySegment[] };
+        }
+        console.warn('[DifyService] createDocumentSegments - Expected array but got:', typeof data, data);
+        return { success: false, error: 'Expected array of segments in response' };
+      }
     );
   }
 
@@ -792,6 +831,16 @@ export class DifyService {
    * Delete a document segment
    */
   async deleteDocumentSegment(datasetId: string, documentId: string, segmentId: string): Promise<DifyApiResponse<{ message: string }>> {
+    // Check if premium features are enabled
+    if (!FEATURE_FLAGS.ENABLE_DIFY_PREMIUM_FEATURES) {
+      console.warn('[DifyService] deleteDocumentSegment - Premium features are disabled');
+      return {
+        error: API_ERROR_CODES.PREMIUM_FEATURE_REQUIRED,
+        code: API_ERROR_CODES.FORBIDDEN.toString(),
+        message: PREMIUM_FEATURE_MESSAGES.SEGMENT_DELETE_DISABLED
+      };
+    }
+
     if (!datasetId?.trim() || !documentId?.trim() || !segmentId?.trim()) {
       console.error('[DifyService] deleteDocumentSegment - Dataset ID, Document ID, and Segment ID are required');
       return {
@@ -799,6 +848,8 @@ export class DifyService {
         message: 'Dataset ID, Document ID, and Segment ID are required'
       };
     }
+
+    console.log(`[DifyService] deleteDocumentSegment - Deleting segment ${segmentId} from document ${documentId} in dataset ${datasetId}`);
 
     const result = await this.makeRequest<{ message: string }>(
       `/datasets/${datasetId}/documents/${documentId}/segments/${segmentId}`,
@@ -808,6 +859,9 @@ export class DifyService {
 
     if (!result.error) {
       result.data = { message: 'Segment deleted successfully' };
+      console.log(`[DifyService] deleteDocumentSegment - Successfully deleted segment ${segmentId}`);
+    } else {
+      console.error('[DifyService] deleteDocumentSegment - Failed to delete segment:', result);
     }
 
     return result;
