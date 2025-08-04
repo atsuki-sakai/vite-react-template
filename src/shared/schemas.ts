@@ -364,3 +364,80 @@ export const safeParseDifySegment = (data: unknown) => {
 export const safeParseDocumentEmbeddingStatus = (data: unknown) => {
   return DocumentEmbeddingStatusSchema.safeParse(data);
 };
+
+
+// LINE
+export const lineWebhookBodySchema = z.object({
+  destination: z.string(),
+  events: z.array(z.object({
+      type: z.string(),
+      message: z.object({
+          type: z.string(),
+          text: z.string().optional(),
+      }),
+  })),
+});
+
+export const lineWebhookEventSchema = z.object({
+  type: z.string(),
+  mode: z.string().optional(),
+  timestamp: z.number(),
+  source: z.object({
+    type: z.string(),
+    userId: z.string(),
+  }),
+  webhookEventId: z.string(),
+  deliveryContext: z.object({
+    isRedelivery: z.boolean(),
+  }),
+  message: z.object({
+    id: z.string(),
+    type: z.enum(["text", "image"]),
+    quoteToken: z.string().optional(),
+    text: z.string().optional(),
+    contentProvider: z.object({
+    type: z.string(),
+    originalContentUrl: z.string().optional(),
+    previewImageUrl: z.string().optional(),
+    }).optional(),
+  }).optional(),
+  replyToken: z.string(),
+});
+
+export type LineWebhookEvent = z.infer<typeof lineWebhookEventSchema>;
+export type LineWebhookBody = z.infer<typeof lineWebhookBodySchema>;
+
+// Chat History Schemas
+export const ChatMessageSchema = z.object({
+  id: z.number(),
+  conversation_id: z.string(),
+  user_id: z.string(),
+  message_type: z.string(),
+  message_content: z.string().nullable(),
+  image_url: z.string().nullable(),
+  dify_response: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export const ChatHistoryListRequestSchema = z.object({
+  limit: z.number().min(1).max(100).optional().default(50),
+  offset: z.number().min(0).optional().default(0),
+  conversation_id: z.string().optional(),
+  user_id: z.string().optional(),
+});
+
+export const ChatHistoryListResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.object({
+    messages: z.array(ChatMessageSchema),
+    total: z.number(),
+    limit: z.number(),
+    offset: z.number(),
+  }),
+});
+
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;
+export type ChatHistoryListRequest = z.infer<typeof ChatHistoryListRequestSchema>;
+export type ChatHistoryListResponse = z.infer<typeof ChatHistoryListResponseSchema>;
+
