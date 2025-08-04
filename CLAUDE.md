@@ -75,3 +75,51 @@ The project uses a centralized type system powered by Zod schemas:
 - **API Consistency**: Frontend and backend share identical type definitions
 - **Developer Experience**: Auto-completion and type checking throughout the stack
 - **Maintainability**: Single place to update types when API changes
+
+## Database & Storage with D1
+
+### D1 Database Integration
+The project uses Cloudflare D1 (SQLite) for persistent data storage:
+
+- **Database Configuration**: `wrangler.json` defines D1 database binding
+- **Schema Definition**: `src/db/schema.ts` contains Drizzle ORM schema definitions
+- **Migration System**: `migrations/` directory contains SQL migration files
+- **Type Safety**: Database operations are type-safe using Drizzle ORM
+
+### Key D1 Files
+- `src/db/schema.ts` - Database schema definitions with Drizzle ORM
+- `src/db/index.ts` - Database connection and query utilities
+- `migrations/0001_init.sql` - Initial database schema migration
+- `drizzle.config.ts` - Drizzle configuration for schema generation
+
+### Database Operations
+- **Automatic Migrations**: Run `wrangler d1 migrations apply DB --remote` for production
+- **Local Development**: Database runs locally in `.wrangler/state/`
+- **Type Generation**: Schema types are automatically inferred from Drizzle definitions
+
+## Cloudflare Workflows
+
+### Workflow Architecture
+The project implements Cloudflare Workflows for complex, multi-step operations:
+
+- **Entry Point**: `src/worker/workflows/lineMessageWorkflow.ts`
+- **Workflow Binding**: Configured in `wrangler.json` as `LINE_MESSAGE_WORKFLOW`
+- **Step Management**: Each workflow step is durable and can be retried independently
+- **Parallel Processing**: Database saves and external API calls run concurrently
+
+### Key Workflow Features
+- **Durable Execution**: Steps are persisted and can survive worker restarts
+- **Error Handling**: Built-in retry logic with exponential backoff
+- **Parallel Steps**: Multiple operations can run simultaneously for performance
+- **Type Safety**: Full TypeScript support for workflow parameters and return types
+
+### Workflow Files
+- `src/worker/workflows/lineMessageWorkflow.ts` - Main workflow implementation
+- `src/worker/types.ts` - Workflow parameter type definitions
+- `src/services/LineWebhookService.ts` - Integration with LINE messaging API
+
+### Workflow Benefits
+- **Reliability**: Automatic retries and error recovery
+- **Performance**: Parallel execution of independent operations
+- **Scalability**: Handles high-volume message processing
+- **Observability**: Built-in logging and monitoring support
