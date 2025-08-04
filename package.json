@@ -21,6 +21,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-toast": "^1.2.14",
+    "@radix-ui/react-tooltip": "^1.2.7",
     "@tailwindcss/vite": "^4.1.11",
     "@tanstack/react-query": "^5.84.1",
     "class-variance-authority": "^0.7.1",
@@ -70,8 +71,8 @@
     "dev:worker": "wrangler dev",
     "dev:full": "concurrently \"npm run dev\" \"npm run dev:worker\"",
     "lint": "eslint .",
-    "predeploy": "wrangler d1 migrations apply DB --remote",
-    "seedLocalDb": "wrangler d1 migrations apply DB --local",
+    "d1:remote": "wrangler d1 migrations apply DB --remote",
+    "d1:local": "wrangler d1 migrations apply DB --local",
     "preview": "npm run build && vite preview"
   },
   "type": "module"
