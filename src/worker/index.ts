@@ -572,7 +572,7 @@ api.delete('/chat/messages/batch', async (c) => {
       }, 400);
     }
     
-    const ids = body.ids.filter((id: any) => Number.isInteger(id) && id > 0);
+    const ids = body.ids.filter((id: number) => Number.isInteger(id) && id > 0);
     if (ids.length === 0) {
       return c.json({ 
         success: false,

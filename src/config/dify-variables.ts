@@ -6,8 +6,9 @@
  */
 
 export interface ConversationVariableContext {
-  conversationId: string;
-  isFirst: number;
+  conversationId?: string;
+  userId?: string;
+  isFirst?: number;
   customerName?: string;
   phone?: string;
   reservationDateAndTime?: string;
@@ -27,9 +28,8 @@ export type VariableGenerator<T = any> = (context: ConversationVariableContext) 
  * and returns the appropriate value for that variable.
  */
 export const DIFY_CONVERSATION_VARIABLES = {
-  conversation: {
-    // 初回会話判定 - 1: 初回, 0: 継続
-    is_first: (context: ConversationVariableContext): number => {
+    // 初回会話判定 - 1: 初回, 0: 継続（Difyアプリ側はキャメルケース期待）
+    isFirst: (context: ConversationVariableContext): number => {
       return (!context.conversationId || context.conversationId.trim() === "") ? 1 : 0;
     },
     
@@ -67,15 +67,7 @@ export const DIFY_CONVERSATION_VARIABLES = {
     user_context: (context: ConversationVariableContext): string[] => {
       return context.userContext || [];
     },
-  },
-  
-  session: {
-    // セッション開始時刻
-    start_time: (context: ConversationVariableContext): string => {
-      return context.timestamp || new Date().toISOString();
-    }
   }
-} as const;
 
 /**
  * 動的にDify API用のinputsオブジェクトを生成する関数
@@ -128,21 +120,22 @@ export function generateInitialConversationInputs(
   context: ConversationVariableContext
 ): Record<string, any> { // eslint-disable-line @typescript-eslint/no-explicit-any
   return generateDifyInputs(context, [
-    'conversation.is_first',
-    'conversation.customer_name',
-    'conversation.phone',
-    'conversation.reservation_date_and_time',
-    'conversation.menu_name',
-    'conversation.feature_image',
-    'conversation.llm_context',
-    'conversation.user_context',
-    'conversation.user_id',
+    'isFirst',
+    'customer_name',
+    'phone',
+    'reservation_date_and_time',
+    'menu_name',
+    'feature_image',
+    'llm_context',
+    'user_context',
+    'user_id',
     'session.start_time'
   ]);
 }
 
 /**
- * 継続会話時のみに必要な変数を生成する便利関数
+ * 継続会話時に必要な変数を生成する便利関数
+ * 注意：Difyアプリケーション側でisFirstが必須の場合、継続会話でも送信が必要
  * 
  * @param context - コンテキスト情報
  * @returns 継続会話用のinputsオブジェクト
@@ -151,15 +144,15 @@ export function generateContinuationInputs(
   context: ConversationVariableContext 
 ): Record<string, any> { // eslint-disable-line @typescript-eslint/no-explicit-any
   return generateDifyInputs(context, [
-    'conversation.message_count',
-    'conversation.is_first',
-    'conversation.customer_name',
-    'conversation.phone',
-    'conversation.reservation_date_and_time',
-    'conversation.menu_name',
-    'conversation.feature_image',
-    'conversation.llm_context',
-    'conversation.user_context'
+    'message_count',
+    'isFirst',
+    'customer_name',
+    'phone',
+    'reservation_date_and_time',
+    'menu_name',
+    'feature_image',
+    'llm_context',
+    'user_context'
   ]);
 }
 
