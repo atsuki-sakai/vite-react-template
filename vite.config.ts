@@ -6,6 +6,21 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), cloudflare(), tailwindcss()],
+  server: {
+    watch: {
+      ignored: [
+        '.wrangler/**',
+        '**/.wrangler/**',
+        '**/miniflare-D1DatabaseObject/**',
+        '**/*.sqlite',
+        '**/*.sqlite-shm',
+        '**/*.sqlite-wal',
+        'node_modules/**',
+        'dist/**'
+      ],
+      usePolling: false
+    }
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src/react-app"),
