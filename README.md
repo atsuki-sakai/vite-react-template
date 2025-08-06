@@ -2,38 +2,49 @@
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/vite-react-template)
 
-このテンプレートは、React、TypeScript、Vite、D1データベース、Cloudflare Workflowsを使用した包括的なフルスタックセットアップを提供します。ホットモジュールリプレースメント、ESLint統合、データベースマイグレーション、永続的ワークフロー、そしてWorkersデプロイメントの柔軟性を特徴としています。
+このテンプレートは、React、TypeScript、Vite、Cloudflare D1データベース、Cloudflare Workflows、shadcn/ui、そしてDify API統合を使用した包括的なフルスタックセットアップを提供します。型安全なスキーマ、ランタイム検証、永続的ワークフロー、そしてモダンなUI コンポーネントを特徴とした本番対応のアーキテクチャです。
 
 ![React + TypeScript + Vite + Cloudflare Workers](https://imagedelivery.net/wSMYJvS3Xw-n339CbDyDIA/fc7b4b62-442b-4769-641b-ad4422d74300/public)
 
 <!-- dash-content-start -->
 
-🚀 この強力なスタックでWebベロプメントを加速させましょう：
+🚀 この強力なスタックでWebアプリケーション開発を加速させましょう：
 
-- [**React**](https://react.dev/) - インタラクティブなインターフェースを構築するモダンなUIライブラリ
-- [**Vite**](https://vite.dev/) - 超高速ビルドツールと開発サーバー
-- [**Hono**](https://hono.dev/) - 超軽量でモダンなバックエンドフレームワーク
-- [**Cloudflare Workers**](https://developers.cloudflare.com/workers/) - グローバルデプロイメント用エッジコンピューティングプラットフォーム
-- [**Cloudflare D1**](https://developers.cloudflare.com/d1/) - エッジでのサーバーレスSQLiteデータベース
-- [**Cloudflare Workflows**](https://developers.cloudflare.com/workflows/) - 複雑な操作のための永続実行エンジン
-- [**Drizzle ORM**](https://orm.drizzle.team/) - 型安全なデータベース操作
-- [**Zod**](https://zod.dev/) - ランタイム型検証とスキーマ定義
+### 🎯 核心テクノロジー
+- [**React 19**](https://react.dev/) - 最新のReact機能とConcurrent Featuresを活用
+- [**Vite 6**](https://vite.dev/) - 最速のビルドツールと開発サーバー
+- [**Hono**](https://hono.dev/) - エッジ最適化された超軽量バックエンドフレームワーク
+- [**TypeScript**](https://www.typescriptlang.org/) - 型安全性とDX向上のため完全統合
+
+### ⚡ Cloudflareプラットフォーム
+- [**Cloudflare Workers**](https://developers.cloudflare.com/workers/) - エッジコンピューティングとグローバルデプロイメント
+- [**Cloudflare D1**](https://developers.cloudflare.com/d1/) - エッジ最適化されたサーバーレスSQLiteデータベース
+- [**Cloudflare Workflows**](https://developers.cloudflare.com/workflows/) - 複雑な多段階操作の永続実行エンジン
+
+### 🛠️ 開発効率化ツール
+- [**Drizzle ORM**](https://orm.drizzle.team/) - 型安全なデータベース操作とマイグレーション
+- [**Zod**](https://zod.dev/) - ランタイム型検証と共有スキーマ定義
+- [**shadcn/ui**](https://ui.shadcn.com/) - モダンでアクセシブルなUIコンポーネントライブラリ
+- [**TailwindCSS 4**](https://tailwindcss.com/) - ユーティリティファーストCSSフレームワーク
+
+### 🔗 統合・サービス
+- [**Dify API**](https://dify.ai/) - AI/チャット機能統合
+- [**LINE Messaging API**](https://developers.line.biz/) - LINEチャットボット統合
+- [**React Query (TanStack Query)**](https://tanstack.com/query/latest) - サーバー状態管理とキャッシング
 
 ### ✨ 主要機能
 
-- 🔥 迅速な開発のためのホットモジュールリプレースメント（HMR）
-- 📦 TypeScriptサポートが標準装備
-- 🛠️ ESLint設定を含む
-- ⚡ Cloudflareのグローバルネットワークへのゼロ設定デプロイメント
-- 🎯 Honoのエレガントなルーティングを使ったAPIルート
-- 🔄 フルスタック開発セットアップ
-- 🗄️ **自動マイグレーション付きD1 SQLiteデータベース**
-- ⚙️ **複雑で多段階操作のための永続ワークフロー**
-- 🛡️ **Drizzle ORMによる型安全なデータベース操作**
-- 🔍 **Zodスキーマによるランタイム検証**
-- 🚀 **可観測性を備えた本番対応アーキテクチャ**
+- 🔥 **高速開発体験**: HMRとConcurrent開発サーバー（フロント・ワーカー同時実行）
+- 📦 **完全TypeScript統合**: すべてのレイヤーで型安全性を保証
+- 🛡️ **ランタイム検証**: Zodスキーマによる完全なAPIバリデーション
+- 🗄️ **型安全データベース**: Drizzle ORMとD1による自動マイグレーション
+- ⚙️ **永続ワークフロー**: 複雑なビジネスロジックの堅牢な実行
+- 🎨 **モダンUI**: shadcn/uiとTailwindCSSによる美しいインターフェース
+- 🔄 **シームレス統合**: フロントエンドとバックエンドで共有される型とスキーマ
+- 📱 **レスポンシブ対応**: モバイルファーストの設計とコンポーネント
+- 🚀 **本番対応**: ゼロ設定デプロイメントと可観測性
 
-ローカル開発で数分で開始するか、Cloudflareダッシュボード経由で直接デプロイできます。永続的なデータストレージと複雑なビジネスロジックを持つモダンで高性能なWebアプリケーションの構築に最適です。
+企業レベルのWebアプリケーション、AI統合プラットフォーム、リアルタイムチャットシステム、そしてデータ集約型のSaaSプロダクトの構築に最適です。
 
 <!-- dash-content-end -->
 
@@ -139,27 +150,27 @@ npm run dev
 
 アプリケーションは [http://localhost:5173](http://localhost:5173) で利用できます。
 
-### 利用可能なスクリプト
+### 💻 利用可能なスクリプト
 
 ```bash
-# 開発
-npm run dev              # Vite開発サーバーを起動
-npm run dev:worker       # Wrangler開発サーバーを起動
-npm run dev:full         # ViteとWranglerの両方を起動（並行実行）
+# 🚀 開発サーバー
+npm run dev              # Viteフロントエンド開発サーバー (http://localhost:5173)
+npm run dev:worker       # Cloudflare Workers開発サーバー (Wrangler)
+npm run dev:full         # フロントエンド＋ワーカー同時起動 (推奨)
 
-# ビルド & デプロイ
-npm run build            # 本番用ビルド
-npm run preview          # 本番ビルドをローカルでプレビュー
+# 🏗️ ビルド & デプロイメント
+npm run build            # 本番用ビルド (TypeScript + Vite)
+npm run preview          # 本番ビルドのローカルプレビュー
 npm run deploy           # Cloudflare Workersにデプロイ
-npm run check            # フル検証（TypeScript + ビルド + デプロイのドライラン）
+npm run check            # 完全検証 (型チェック + ビルド + ドライラン)
 
-# リンティング & 型
-npm run lint             # ESLintを実行
-npm run cf-typegen       # Cloudflare Worker型を生成
+# 🛠️ 開発ツール
+npm run lint             # ESLintによるコード品質チェック
+npm run cf-typegen       # Cloudflare Worker型定義生成
 
-# データベース（D1）
-npm run d1:remote        # リモートデータベースにマイグレーションを適用
-npm run d1:local         # ローカルデータベースにマイグレーションを適用
+# 🗄️ データベース操作 (D1)
+npm run d1:remote        # 本番データベースにマイグレーション適用
+npm run d1:local         # ローカルデータベースにマイグレーション適用
 ```
 
 ## データベース操作
@@ -277,31 +288,99 @@ npx wrangler d1 execute line-messages-db --remote --file=./migrations/0001_init.
 - **ホットリロード**: フロントエンドとワーカーの両方の開発には`npm run dev:full`を使用
 - **デプロイメントテスト**: 本番デプロイ前に`npm run check`を使用
 
-## プロジェクト構造
+## 📁 プロジェクト構造
 
 ```
-├── src/
-│   ├── react-app/          # Reactフロントエンドアプリケーション
-│   ├── worker/              # Cloudflare Workerバックエンド
-│   │   ├── workflows/       # Cloudflare Workflows
-│   │   └── index.ts         # Workerエントリーポイント
-│   ├── services/           # ビジネスロジックサービス
-│   ├── shared/             # 共有型とユーティリティ
-│   └── db/                 # データベーススキーマとユーティリティ
-├── migrations/             # D1データベースマイグレーション
-├── dist/                   # ビルド出力
-├── wrangler.json          # Cloudflare設定
-├── drizzle.config.ts      # Drizzle ORM設定
-└── vite.config.ts         # Viteビルド設定
+vite-react-template/
+├── 🎨 src/react-app/              # Reactフロントエンドアプリケーション
+│   ├── components/                # UIコンポーネント
+│   │   ├── ui/                   # shadcn/ui コンポーネント
+│   │   ├── HomePage.tsx          # メインページ
+│   │   ├── DifyDatasetManager.tsx # Dify API統合コンポーネント
+│   │   ├── ChatHistory.tsx       # チャット履歴表示
+│   │   └── ...                   # その他アプリケーションコンポーネント
+│   ├── lib/utils.ts              # ユーティリティ関数
+│   ├── main.tsx                  # Reactアプリエントリーポイント
+│   └── App.tsx                   # メインアプリコンポーネント
+│
+├── ⚙️ src/worker/                  # Cloudflare Workerバックエンド
+│   ├── workflows/                # Cloudflare Workflows
+│   │   └── lineMessageWorkflow.ts # LINE メッセージ処理ワークフロー
+│   ├── index.ts                  # Workerメインハンドラー
+│   └── types.ts                  # Worker型定義
+│
+├── 🔧 src/services/               # ビジネスロジックサービス層
+│   ├── DifyService.ts            # Dify API統合サービス
+│   ├── ChatService.ts            # チャット機能サービス
+│   ├── LineWebhookService.ts     # LINE Webhook処理
+│   └── constant.ts               # サービス定数
+│
+├── 📦 src/shared/                 # フロント・バック共有コード
+│   ├── schemas/                  # Zod型定義・バリデーション
+│   │   ├── dify/                # Dify API スキーマ
+│   │   ├── line/                # LINE API スキーマ
+│   │   ├── chat/                # チャット関連スキーマ
+│   │   └── validations/         # バリデーションルール
+│   ├── hooks/                   # React カスタムフック
+│   │   ├── useDifyApi.ts        # Dify API フック
+│   │   └── useChatHistory.ts    # チャット履歴フック
+│   └── index.ts                 # 共有エクスポート
+│
+├── 🗄️ src/db/                     # データベース層
+│   ├── schema.ts                # Drizzle ORM スキーマ定義
+│   └── index.ts                 # データベースユーティリティ
+│
+├── 📊 migrations/                 # D1 データベースマイグレーション
+│   └── 0001_init.sql            # 初期スキーマ
+│
+├── 🏗️ ビルド・設定ファイル
+│   ├── wrangler.json            # Cloudflare Workers設定
+│   ├── drizzle.config.ts        # Drizzle ORM設定
+│   ├── vite.config.ts           # Vite ビルド設定
+│   ├── tailwind.config.js       # TailwindCSS設定
+│   ├── components.json          # shadcn/ui設定
+│   └── tsconfig.*.json          # TypeScript設定
+│
+└── 📤 dist/                      # ビルド出力ディレクトリ
 ```
 
-## 追加リソース
+### 🏗️ アーキテクチャの特徴
 
-- [Cloudflare Workers ドキュメント](https://developers.cloudflare.com/workers/)
-- [Cloudflare D1 ドキュメント](https://developers.cloudflare.com/d1/)
-- [Cloudflare Workflows ドキュメント](https://developers.cloudflare.com/workflows/)
-- [Drizzle ORM ドキュメント](https://orm.drizzle.team/)
-- [Vite ドキュメント](https://vitejs.dev/guide/)
-- [React ドキュメント](https://reactjs.org/)
-- [Hono ドキュメント](https://hono.dev/)
-- [Zod ドキュメント](https://zod.dev/)
+- **🔄 デュアルビルドシステム**: フロントエンド（Vite）とバックエンド（Workers）が独立
+- **📝 型安全性**: Zodスキーマからの型推論で完全なエンドツーエンド型安全性
+- **🎨 コンポーネント設計**: shadcn/uiベースのモダンなUIコンポーネント
+- **🗄️ データ層**: Drizzle ORMによる型安全なデータベース操作
+- **⚡ パフォーマンス**: エッジコンピューティングとグローバル分散
+- **🔧 開発体験**: ホットリロード、型チェック、リアルタイム開発
+
+## 📚 追加リソース
+
+### 🎯 コアテクノロジー
+- [React 19 ドキュメント](https://react.dev/) - 最新のReact機能とConcurrent Features
+- [Vite 6 ドキュメント](https://vitejs.dev/guide/) - 超高速ビルドツールとモジュールバンドラー
+- [TypeScript ドキュメント](https://www.typescriptlang.org/docs/) - 型安全性とスケーラビリティ
+- [Hono ドキュメント](https://hono.dev/) - エッジ最適化されたWebフレームワーク
+
+### ⚡ Cloudflareプラットフォーム
+- [Cloudflare Workers ドキュメント](https://developers.cloudflare.com/workers/) - エッジコンピューティングプラットフォーム
+- [Cloudflare D1 ドキュメント](https://developers.cloudflare.com/d1/) - サーバーレスSQLiteデータベース
+- [Cloudflare Workflows ドキュメント](https://developers.cloudflare.com/workflows/) - 永続実行エンジン
+- [Wrangler CLI ドキュメント](https://developers.cloudflare.com/workers/wrangler/) - Cloudflare開発・デプロイツール
+
+### 🛠️ 開発ツール・ライブラリ
+- [Drizzle ORM ドキュメント](https://orm.drizzle.team/) - 型安全なデータベースORM
+- [Zod ドキュメント](https://zod.dev/) - ランタイム型検証ライブラリ
+- [shadcn/ui ドキュメント](https://ui.shadcn.com/) - モダンなUIコンポーネントライブラリ
+- [TailwindCSS 4 ドキュメント](https://tailwindcss.com/docs) - ユーティリティファーストCSS
+- [React Query ドキュメント](https://tanstack.com/query/latest) - サーバー状態管理ライブラリ
+
+### 🔗 統合API・サービス
+- [Dify API ドキュメント](https://docs.dify.ai/guides/application-orchestration/app-api) - AI/チャット機能統合
+- [LINE Messaging API ドキュメント](https://developers.line.biz/en/docs/messaging-api/) - LINEチャットボット統合
+- [Lucide React アイコン](https://lucide.dev/) - モダンなアイコンライブラリ
+
+### 🚀 学習・チュートリアル
+- [Cloudflare Workers チュートリアル](https://developers.cloudflare.com/workers/tutorials/)
+- [React + TypeScript ベストプラクティス](https://react-typescript-cheatsheet.netlify.app/)
+- [Drizzle ORM チュートリアル](https://orm.drizzle.team/docs/tutorials)
+- [Zod + TypeScript 実践ガイド](https://zod.dev/?id=table-of-contents)
