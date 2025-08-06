@@ -21,6 +21,12 @@ import {
 import type { AIResponse } from "../worker/types";
 import type { D1Database } from "@cloudflare/workers-types";
 import type { Workflow } from "@cloudflare/workers-types";
+import { 
+  generateDifyInputs, 
+  generateInitialConversationInputs,
+  debugLogInputs,
+  type ConversationVariableContext 
+} from "../config/dify-variables";
 
 interface Env {
   LINE_CHANNEL_SECRET: string;
@@ -202,8 +208,26 @@ export class DifyService {
     }
     
     try {
+      // 会話変数のコンテキストを準備
+      const variableContext: ConversationVariableContext = {
+        conversationId: conversationId || "",
+        userId: userId,
+        timestamp: new Date().toISOString()
+      };
+
+      // 動的にinputsを生成（初回会話の場合のみ）
+      const isFirstMessage = !conversationId || conversationId.trim() === "";
+      const inputs = isFirstMessage 
+        ? generateInitialConversationInputs(variableContext)
+        : {};
+
+      // デバッグログ出力
+      if (isFirstMessage) {
+        debugLogInputs(inputs, variableContext);
+      }
+
       const requestBody: DifyChatRequest = {
-        inputs: {},
+        inputs: inputs,
         query: message,
         response_mode: "blocking",
         user: userId,
