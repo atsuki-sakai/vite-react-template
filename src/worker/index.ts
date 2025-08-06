@@ -4,7 +4,7 @@ import { safeParseCreateDatasetRequest, safeParseCreateDocumentByTextRequest, Up
 import { createDifyService } from "../services/DifyService";
 import { createDb, DrizzleDB } from "../db";
 import { lineMessages } from "../db/schema";
-import { desc, and, eq } from "drizzle-orm";
+import { desc, and, eq, or } from "drizzle-orm";
 import { basicAuth } from "hono/basic-auth";
 import { LineMessageWorkflow } from "./workflows/lineMessageWorkflow";
 import LineWebhookService from "../services/LineWebhookService";
@@ -326,14 +326,16 @@ api.delete('/datasets/:datasetId/documents/:documentId', async (c) => {
   }
 });
 
-// Get document segments (chunks)
+// Get document segments (chunks) with pagination
 api.get('/datasets/:datasetId/documents/:documentId/segments', async (c) => {
   try {
     const datasetId = c.req.param('datasetId');
     const documentId = c.req.param('documentId');
+    const page = parseInt(c.req.query('page') || '1');
+    const limit = parseInt(c.req.query('limit') || '20');
     
     const difyService = createDifyService(c.env, "knowledge");
-    const response = await difyService.getDocumentSegments(datasetId, documentId);
+    const response = await difyService.getDocumentSegments(datasetId, documentId, page, limit);
     return c.json(response);
   } catch (error) {
     console.error('[API] get document segments error:', error);
@@ -502,6 +504,99 @@ api.get('/chat/messages/:id', async (c) => {
     return c.json({ 
       success: false,
       error: 'Failed to get message',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+// Update message dify_response
+api.patch('/chat/messages/:id', async (c) => {
+  try {
+    const db = c.get("db");
+    const messageId = parseInt(c.req.param('id'));
+    
+    if (isNaN(messageId)) {
+      return c.json({ 
+        success: false,
+        error: 'Invalid message ID' 
+      }, 400);
+    }
+    
+    const body = await c.req.json();
+    if (!body.dify_response || typeof body.dify_response !== 'string') {
+      return c.json({ 
+        success: false,
+        error: 'dify_response is required and must be a string' 
+      }, 400);
+    }
+    
+    const updatedMessage = await db.update(lineMessages)
+      .set({ 
+        dify_response: body.dify_response,
+        updated_at: new Date().toISOString()
+      })
+      .where(eq(lineMessages.id, messageId))
+      .returning();
+    
+    if (updatedMessage.length === 0) {
+      return c.json({ 
+        success: false,
+        error: 'Message not found' 
+      }, 404);
+    }
+    
+    return c.json({
+      success: true,
+      data: updatedMessage[0]
+    });
+  } catch (error) {
+    console.error('[API] update message error:', error);
+    return c.json({ 
+      success: false,
+      error: 'Failed to update message',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+// Batch delete messages
+api.delete('/chat/messages/batch', async (c) => {
+  try {
+    const db = c.get("db");
+    const body = await c.req.json();
+    
+    if (!body.ids || !Array.isArray(body.ids) || body.ids.length === 0) {
+      return c.json({ 
+        success: false,
+        error: 'ids array is required and must not be empty' 
+      }, 400);
+    }
+    
+    const ids = body.ids.filter((id: any) => Number.isInteger(id) && id > 0);
+    if (ids.length === 0) {
+      return c.json({ 
+        success: false,
+        error: 'No valid message IDs provided' 
+      }, 400);
+    }
+    
+    const deletedMessages = await db.delete(lineMessages)
+      .where(
+        ids.length === 1 
+          ? eq(lineMessages.id, ids[0])
+          : or(...ids.map((id: number) => eq(lineMessages.id, id)))
+      )
+      .returning();
+    
+    return c.json({
+      success: true,
+      deleted: deletedMessages.length
+    });
+  } catch (error) {
+    console.error('[API] batch delete messages error:', error);
+    return c.json({ 
+      success: false,
+      error: 'Failed to delete messages',
       message: error instanceof Error ? error.message : 'Unknown error'
     }, 500);
   }
