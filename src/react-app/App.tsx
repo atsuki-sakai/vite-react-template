@@ -2,7 +2,6 @@ import { Routes, Route } from "react-router-dom";
 import DatasetDetail from "./components/DatasetDetail";
 import DocumentDetail from "./components/DocumentDetail";
 import ChatHistory from "./components/ChatHistory";
-
 import HomePage from "./components/HomePage";
 function App() {
   return (

@@ -11,6 +11,9 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 20 * 60 * 1000, // 20 minutes
       gcTime: 25 * 60 * 1000, // 25 minutes (garbage collection time)
+      refetchInterval: false,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
     },
   },
 });
