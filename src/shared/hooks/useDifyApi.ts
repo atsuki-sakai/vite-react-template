@@ -143,11 +143,11 @@ export function useDifyApi() {
     });
   };
 
-  const useDocumentSegments = (datasetId: string, documentId: string, enabled = true) => {
+  const useDocumentSegments = (datasetId: string, documentId: string, page = 1, limit = 20, enabled = true) => {
     return useQuery({
-      queryKey: ['documentSegments', datasetId, documentId],
+      queryKey: ['documentSegments', datasetId, documentId, page, limit],
       queryFn: () => apiCall<DifySegment[]>(
-        `/datasets/${datasetId}/documents/${documentId}/segments`,
+        `/datasets/${datasetId}/documents/${documentId}/segments?page=${page}&limit=${limit}`,
         { method: 'GET' },
         (data) => {
           if (Array.isArray(data)) {
