@@ -18,13 +18,10 @@ import {
   PREMIUM_FEATURE_MESSAGES,
   API_ERROR_CODES,
 } from "../shared";
+import { ConversationVariableContext, generateDifyInputs } from "../config/dify-variables";
 import type { AIResponse } from "../worker/types";
 import type { D1Database } from "@cloudflare/workers-types";
 import type { Workflow } from "@cloudflare/workers-types";
-import { 
-  debugLogInputs,
-  type ConversationVariableContext 
-} from "../config/dify-variables";
 
 interface Env {
   LINE_CHANNEL_SECRET: string;
@@ -206,92 +203,33 @@ export class DifyService {
     }
     
     try {
-      // 会話変数のコンテキストを準備
-      const variableContext: ConversationVariableContext = {
-        conversationId: conversationId || "",
-        userId: userId,
-        isFirst: 0,
-        timestamp: new Date().toISOString()
-      };
-
-      // 詳細ログ: コンテキスト情報
-      console.log('[DifyService] processMessage - Context preparation:', {
+      // Generate dynamic inputs using the conversation variables system
+      const context: ConversationVariableContext = {
         conversationId: conversationId,
         userId: userId,
-        messageLength: message.length,
-        hasImageUrl: !!imageUrl,
-        variableContext: JSON.stringify(variableContext, null, 2)
-      });
-
-      // 動的にinputsを生成（初回・継続に関わらず基本変数は送信）
-      const isFirstMessage = !conversationId || conversationId.trim() === "";
-      console.log('[DifyService] processMessage - First message check:', {
-        isFirstMessage: isFirstMessage,
-        conversationIdEmpty: !conversationId,
-        conversationIdTrimmed: conversationId?.trim()
-      });
-
-      const inputs = {
-        conversation: {
-          isFirst: isFirstMessage,
-          customerName: variableContext.customerName,
-          phone: variableContext.phone,
-          reservationDateAndTime: variableContext.reservationDateAndTime,
-          menuName: variableContext.menuName,
-          featureImage: variableContext.featureImage,
-        }
+        isFirst: conversationId ? "false" : "true",
+        customerName: "",
+        phone: "",
+        reservationDateAndTime: "",
+        menuName: "",
+        llmContext: [],
+        userContext: []
       };
 
-      // 詳細ログ: 生成されたinputs
-      console.log('[DifyService] processMessage - Generated inputs:', {
-        isFirstMessage: isFirstMessage,
-        inputsKeys: Object.keys(inputs),
-        inputsContent: JSON.stringify(inputs, null, 2)
-      });
-
-      // デバッグログ出力（初回・継続両方）
-      debugLogInputs(inputs, variableContext);
-
       const requestBody: DifyChatRequest = {
-        inputs: inputs,
+        inputs: generateDifyInputs(context),
         query: message,
         response_mode: "blocking",
         user: userId,
         conversation_id: conversationId,
       };
 
-      // 詳細ログ: APIリクエストボディ
-      console.log('[DifyService] processMessage - Request body preparation:', {
-        hasInputs: Object.keys(inputs).length > 0,
-        queryLength: message.length,
-        userId: userId,
-        conversationId: conversationId || 'EMPTY',
-        hasFiles: !!requestBody.files,
-        fullRequestBody: JSON.stringify(requestBody, null, 2)
-      });
-
-      if (imageUrl) {
-        requestBody.files = [{
-          type: "image",
-          transfer_method: "remote_url",
-          url: imageUrl,
-        }];
-      }
-
-      // 詳細ログ: ファイル追加後の最終リクエストボディ
-      console.log('[DifyService] processMessage - Final request body before API call:', {
-        url: `${this.apiUrl}/chat-messages`,
-        method: 'POST',
-        bodySize: JSON.stringify(requestBody).length,
-        finalRequestBody: JSON.stringify(requestBody, null, 2)
-      });
+      console.log("requestBody: ", requestBody);
 
       // タイムアウト制御付きでfetch実行
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 6000000); // 100分タイムアウト
-      
-      console.log('[DifyService] processMessage - Starting API request to:', `${this.apiUrl}/chat-messages`);
-      
+
       const response = await fetch(`${this.apiUrl}/chat-messages`, {
         method: "POST",
         headers: {
@@ -301,27 +239,13 @@ export class DifyService {
         body: JSON.stringify(requestBody),
         signal: controller.signal,
       });
+      console.log("response: ", response);
       
       clearTimeout(timeoutId);
       
-      console.log('[DifyService] processMessage - API response received:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-      
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('[DifyService] processMessage - Dify API error details:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorText: errorText,
-          requestBody: JSON.stringify(requestBody, null, 2),
-          apiUrl: `${this.apiUrl}/chat-messages`
-        });
         console.error("Dify API error:", errorText);
-        
         // Handle specific error cases
         if (response.status === 404 && errorText.includes("Conversation Not Exists")) {
           console.log("Conversation not found, retrying with new conversation");
@@ -341,39 +265,15 @@ export class DifyService {
       let difyResult: DifyChatResponse;
       try {
         difyResult = await response.json() as DifyChatResponse;
-        console.log('[DifyService] processMessage - Successful API response:', {
-          hasAnswer: !!difyResult.answer,
-          answerLength: difyResult.answer?.length || 0,
-          hasConversationId: !!difyResult.conversation_id,
-          conversationId: difyResult.conversation_id,
-          fullResponse: JSON.stringify(difyResult, null, 2)
-        });
       } catch (parseError) {
-        console.error('[DifyService] processMessage - JSON parse error:', {
-          parseError: parseError,
-          responseStatus: response.status,
-          responseHeaders: Object.fromEntries(response.headers.entries())
-        });
         console.error("Failed to parse Dify API response as JSON:", parseError);
         return { answer: "申し訳ございません。応答の解析に失敗しました。" };
       }
       
       // Validate that we have a meaningful answer
       if (!difyResult.answer || difyResult.answer.trim() === "") {
-        console.warn('[DifyService] processMessage - Empty answer received:', {
-          difyResult: JSON.stringify(difyResult, null, 2),
-          answerExists: !!difyResult.answer,
-          answerTrimmed: difyResult.answer?.trim()
-        });
-        console.warn("Dify API returned empty or undefined answer:", difyResult);
         return { answer: "申し訳ございません。回答を生成できませんでした。" };
       }
-      
-      console.log('[DifyService] processMessage - Returning successful response:', {
-        answerLength: difyResult.answer.length,
-        conversationId: difyResult.conversation_id,
-        processingTime: Date.now() - startTime
-      });
       
       return {
         answer: difyResult.answer,
@@ -381,26 +281,12 @@ export class DifyService {
       };
     } catch (error) {
       const duration = Date.now() - startTime;
-      
       // タイムアウトエラーの場合
       if (error instanceof Error && error.name === 'AbortError') {
         console.error(`Dify API timeout after ${duration}ms`);
         return { answer: "申し訳ございません。応答に時間がかかりすぎています。もう一度お試しください。" };
       }
-      
-      console.error(`[DifyService] processMessage - Unexpected error after ${duration}ms:`, {
-        errorName: error instanceof Error ? error.name : 'Unknown',
-        errorMessage: error instanceof Error ? error.message : String(error),
-        errorStack: error instanceof Error ? error.stack : undefined,
-        conversationId: conversationId,
-        userId: userId,
-        messageLength: message.length
-      });
-      console.error(`Dify API error after ${duration}ms:`, {
-        errorName: error instanceof Error ? error.name : 'Unknown',
-        errorMessage: error instanceof Error ? error.message : String(error),
-      });
-      
+      console.error(`[DifyService] processMessage - Unexpected error after ${duration}ms:`, error);
       return { answer: "申し訳ございます。一時的にサービスが利用できません。" };
     }
   }

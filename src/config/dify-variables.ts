@@ -8,12 +8,11 @@
 export interface ConversationVariableContext {
   conversationId?: string;
   userId?: string;
-  isFirst?: number;
+  isFirst?: string;
   customerName?: string;
   phone?: string;
   reservationDateAndTime?: string;
   menuName?: string;
-  featureImage?: number;
   llmContext?: string[];
   userContext?: string[];
   timestamp?: string;
@@ -28,9 +27,10 @@ export type VariableGenerator<T = any> = (context: ConversationVariableContext) 
  * and returns the appropriate value for that variable.
  */
 export const DIFY_CONVERSATION_VARIABLES = {
-    // 初回会話判定 - 1: 初回, 0: 継続（Difyアプリ側はキャメルケース期待）
-    isFirst: (context: ConversationVariableContext): number => {
-      return (!context.conversationId || context.conversationId.trim() === "") ? 1 : 0;
+  conversation: {
+    // 初回会話判定 - "true": 初回, "false": 継続
+    is_first: (context: ConversationVariableContext): string => {
+      return (!context.conversationId || context.conversationId.trim() === "") ? "true" : "false";
     },
     
     // 顧客名
@@ -53,11 +53,7 @@ export const DIFY_CONVERSATION_VARIABLES = {
       return context.menuName || "";
     },
     
-    // 特徴画像取得状況 - 0:未取得, 1:取得済み
-    feature_image: (context: ConversationVariableContext): number => {
-      return context.featureImage || 0;
-    },
-    
+   
     // LLMが顧客に返答した内容の要約を保存する配列
     llm_context: (context: ConversationVariableContext): string[] => {
       return context.llmContext || [];
@@ -68,12 +64,13 @@ export const DIFY_CONVERSATION_VARIABLES = {
       return context.userContext || [];
     },
   }
+}
 
 /**
  * 動的にDify API用のinputsオブジェクトを生成する関数
  * 
  * @param context - 会話変数生成に必要なコンテキスト情報
- * @param enabledVariables - 有効にする変数のパス（例: ["conversation.is_first", "session.start_time"]）
+ * @param enabledVariables - 有効にする変数のパス（例: ["is_first", "customer_name"]）
  * @returns Dify APIのinputsパラメータに渡すオブジェクト
  */
 export function generateDifyInputs(
@@ -115,27 +112,33 @@ export function generateDifyInputs(
  * 
  * @param context - コンテキスト情報
  * @returns 初回会話用のinputsオブジェクト
+ * 
+ * **以下の形式はDifyアプリケーション側では使用できないことを確認した**
+  'conversation.is_first',
+  'conversation.customer_name',
+  'conversation.phone',
+  'conversation.reservation_date_and_time',
+  'conversation.menu_name',
+  'conversation.llm_context',
+  'conversation.user_context'
  */
 export function generateInitialConversationInputs(
   context: ConversationVariableContext
 ): Record<string, any> { // eslint-disable-line @typescript-eslint/no-explicit-any
   return generateDifyInputs(context, [
-    'isFirst',
+    'is_first',
     'customer_name',
     'phone',
     'reservation_date_and_time',
     'menu_name',
-    'feature_image',
     'llm_context',
-    'user_context',
-    'user_id',
-    'session.start_time'
+    'user_context'
   ]);
 }
 
 /**
  * 継続会話時に必要な変数を生成する便利関数
- * 注意：Difyアプリケーション側でisFirstが必須の場合、継続会話でも送信が必要
+ * 注意：Difyアプリケーション側でis_firstが必須の場合、継続会話でも送信が必要
  * 
  * @param context - コンテキスト情報
  * @returns 継続会話用のinputsオブジェクト
@@ -144,13 +147,11 @@ export function generateContinuationInputs(
   context: ConversationVariableContext 
 ): Record<string, any> { // eslint-disable-line @typescript-eslint/no-explicit-any
   return generateDifyInputs(context, [
-    'message_count',
-    'isFirst',
+    'is_first',
     'customer_name',
     'phone',
     'reservation_date_and_time',
     'menu_name',
-    'feature_image',
     'llm_context',
     'user_context'
   ]);

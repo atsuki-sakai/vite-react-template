@@ -3,12 +3,6 @@ import { z } from 'zod';
 // Chat Request Schema
 export const DifyChatRequestSchema = z.object({
   inputs: z.record(z.string(), z.any()).optional(),
-  isFirst: z.number().optional(),
-  customerName: z.string().optional(),
-  phone: z.string().optional(),
-  reservationDateAndTime: z.string().optional(),
-  menuName: z.string().optional(),
-  featureImage: z.number().optional(),
   query: z.string(),
   response_mode: z.literal("blocking"),
   user: z.string(),
