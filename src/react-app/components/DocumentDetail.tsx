@@ -3,11 +3,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowLeft, FileText, Trash2, Edit, Download, Hash, Clock, Eye, PlusCircle, Lock } from "lucide-react";
+import { ArrowLeft, FileText, Trash2, Edit, Hash, Clock, Eye, PlusCircle, Lock, ChevronLeft, ChevronRight } from "lucide-react";
 import { useDifyApi } from "../../shared/hooks/useDifyApi";
 import { DifySegment, CreateSegmentRequest } from "../../shared/schemas";
 import { FEATURE_FLAGS, PREMIUM_FEATURE_MESSAGES } from "../../shared/constants";
 import SegmentEditDialog from './SegmentEditDialog';
+import { formatDate } from "../../shared/utils";
 
 export default function DocumentDetail() {
   const { datasetId, documentId } = useParams<{ datasetId: string; documentId: string }>();
@@ -20,20 +21,19 @@ export default function DocumentDetail() {
     createDocumentSegments,
     deleteDocumentSegment
   } = useDifyApi();
-  
-  console.log("datasetId", datasetId);
-  console.log("documentId", documentId);
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isSegmentEditDialogOpen, setIsSegmentEditDialogOpen] = useState(false);
   const [selectedSegment, setSelectedSegment] = useState<DifySegment | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const segmentsPerPage = 20;
   
   // Feature flag for premium features
   const isPremiumFeaturesEnabled = FEATURE_FLAGS.ENABLE_DIFY_PREMIUM_FEATURES;
 
   const { data: dataset } = useDataset(datasetId!);
   const { data: document, isLoading: isDocumentLoading } = useDocumentDetails(datasetId!, documentId!, 'all');
-  const { data: segments, isLoading: areSegmentsLoading, refetch: refetchSegments } = useDocumentSegments(datasetId!, documentId!);
+  const { data: segments, isLoading: areSegmentsLoading, refetch: refetchSegments } = useDocumentSegments(datasetId!, documentId!, currentPage, segmentsPerPage);
 
   console.log("dataset", dataset);
   console.log("document", document);
@@ -42,6 +42,18 @@ export default function DocumentDetail() {
   const deleteDocumentMutation = deleteDocument;
   const createSegmentMutation = createDocumentSegments;
   const deleteSegmentMutation = deleteDocumentSegment;
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (segments && segments.length === segmentsPerPage) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
 
   const handleDeleteDocument = () => {
     setIsDeleteDialogOpen(true);
@@ -149,9 +161,9 @@ export default function DocumentDetail() {
       <div className="container mx-auto p-6 max-w-7xl">
         <div className="text-center py-12">
           <FileText className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-lg font-medium text-gray-900">Document not found</h3>
+          <h3 className="mt-2 text-lg font-medium text-gray-900">ドキュメントが見つかりません</h3>
           <p className="mt-1 text-sm text-gray-500">
-            The requested document could not be found.
+            要求されたドキュメントが見つかりませんでした。
           </p>
           <Button
             onClick={() => navigate(`/datasets/${datasetId}`)}
@@ -159,7 +171,7 @@ export default function DocumentDetail() {
             variant="outline"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dataset
+            データセットに戻る
           </Button>
         </div>
       </div>
@@ -181,23 +193,17 @@ export default function DocumentDetail() {
             </Button>
             <div>
               <div className="flex items-center space-x-2 text-sm text-gray-500 mb-1">
-                <span>{dataset?.name || 'Dataset'}</span>
+                <span>{dataset?.name || 'データセット'}</span>
                 <span>/</span>
-                <span>Documents</span>
+                <span>ドキュメント</span>
               </div>
               <h1 className="text-3xl font-bold text-gray-900">{document.name}</h1>
             </div>
           </div>
           <div className="flex space-x-2">
-            <Button variant="outline" size="icon">
-              <Download className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" size="icon">
-              <Edit className="w-4 h-4" />
-            </Button>
             <Button 
-              variant="outline" 
-              size="icon"
+              variant="destructive" 
+              size="sm"
               onClick={handleDeleteDocument}
             >
               <Trash2 className="w-4 h-4" />
@@ -207,42 +213,29 @@ export default function DocumentDetail() {
 
         {/* Document Statistics */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold mb-4">Document Information</h2>
+          <h2 className="text-xl font-semibold mb-4">ドキュメント情報</h2>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
             <div>
-              <span className="font-medium text-gray-700">Characters:</span>
-              <p className="text-2xl font-bold text-blue-600">{(document.character_count || 0).toLocaleString()}</p>
+              <span className="font-medium text-gray-700">文字数:</span>
+              <p className="text-2xl font-bold text-blue-600">{dataset?.word_count || 0}</p>
             </div>
             <div>
-              <span className="font-medium text-gray-700">Tokens:</span>
+              <span className="font-medium text-gray-700">トークン:</span>
               <p className="text-2xl font-bold text-green-600">{(document.tokens || 0).toLocaleString()}</p>
             </div>
             <div>
-              <span className="font-medium text-gray-700">Segments:</span>
+              <span className="font-medium text-gray-700">セグメント数:</span>
               <p className="text-2xl font-bold text-purple-600">{segments?.length || 0}</p>
             </div>
             <div>
-              <span className="font-medium text-gray-700">Processing Status:</span>
-              <div className="mt-1">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  document.processing_status === 'completed' ? 'bg-green-100 text-green-800' :
-                  document.processing_status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
-                  document.processing_status === 'error' ? 'bg-red-100 text-red-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {document.processing_status}
-                </span>
-              </div>
-            </div>
-            <div>
-              <span className="font-medium text-gray-700">Indexing Status:</span>
+              <span className="font-medium text-gray-700">インデックス状況:</span>
               <div className="mt-1">
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                   document.indexing_status === 'completed' ? 'bg-green-100 text-green-800' :
                   document.indexing_status === 'processing' || document.indexing_status === 'waiting' ? 'bg-yellow-100 text-yellow-800' :
                   'bg-red-100 text-red-800'
                 }`}>
-                  {document.indexing_status}
+                  {document.indexing_status === 'completed' ? '完了' : document.indexing_status === 'processing' || document.indexing_status === 'waiting' ? '処理中' : 'エラー'}
                 </span>
               </div>
             </div>
@@ -250,12 +243,12 @@ export default function DocumentDetail() {
           <div className="mt-4 pt-4 border-t border-gray-200">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <span className="font-medium text-gray-700">Created:</span>
-                <p className="text-sm text-gray-600">{new Date(document.created_at).toLocaleString()}</p>
+                <span className="font-medium text-gray-700">作成日:</span>
+                <p className="text-sm text-gray-600">{formatDate(document.created_at)}</p>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Last Updated:</span>
-                <p className="text-sm text-gray-600">{new Date(document.updated_at ?? 0).toLocaleString()}</p>
+                <span className="font-medium text-gray-700">最終更新:</span>
+                <p className="text-sm text-gray-600">{formatDate(document.updated_at ?? null)}</p>
               </div>
             </div>
           </div>
@@ -264,7 +257,7 @@ export default function DocumentDetail() {
         {/* Document Segments */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Document Segments</h2>
+            <h2 className="text-xl font-semibold">ドキュメントセグメント</h2>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -276,7 +269,7 @@ export default function DocumentDetail() {
                     >
                       {!isPremiumFeaturesEnabled && <Lock className="w-4 h-4 mr-2" />}
                       <PlusCircle className="w-4 h-4 mr-2" />
-                      Add Segment
+                      セグメントを追加
                     </Button>
                   </div>
                 </TooltipTrigger>
@@ -297,7 +290,7 @@ export default function DocumentDetail() {
                 <div>
                   <h3 className="text-sm font-medium text-amber-800">有料プラン限定機能</h3>
                   <p className="text-sm text-amber-700 mt-1">
-                    セグメントの編集・追加・削除機能をご利用いただくには、Difyの有料プランが必要です。
+                    セグメントの編集・追加・削除機能をご利用いただくには、有料プランが必要です。
                   </p>
                 </div>
               </div>
@@ -305,7 +298,7 @@ export default function DocumentDetail() {
           )}
           
           {areSegmentsLoading ? (
-            <div className="text-sm text-gray-500">Loading segments...</div>
+            <div className="text-sm text-gray-500">セグメントを読み込み中...</div>
           ) : segments && segments.length > 0 ? (
             <div className="space-y-4">
               {segments.map((segment) => (
@@ -317,7 +310,7 @@ export default function DocumentDetail() {
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">
                         <Hash className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm font-medium text-gray-600">Segment {segment.position}</span>
+                        <span className="text-sm font-medium text-gray-600">セグメント {segment.position}</span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Clock className="w-4 h-4 text-gray-400" />
@@ -328,7 +321,7 @@ export default function DocumentDetail() {
                       {segment.hit_count !== undefined && (
                         <div className="flex items-center space-x-2">
                           <Eye className="w-4 h-4 text-gray-400" />
-                          <span className="text-xs text-gray-500">{segment.hit_count} hits</span>
+                          <span className="text-xs text-gray-500">{segment.hit_count} ヒット</span>
                         </div>
                       )}
                     </div>
@@ -390,7 +383,7 @@ export default function DocumentDetail() {
                   
                   {segment.answer && (
                     <div className="mb-3">
-                      <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Answer</span>
+                      <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">回答</span>
                       <div className="bg-blue-50 rounded-lg p-3 mt-1">
                         <p className="text-sm text-blue-900 leading-relaxed">
                           {segment.answer}
@@ -401,7 +394,7 @@ export default function DocumentDetail() {
                   
                   {segment.keywords && segment.keywords.length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                      <span className="text-xs font-medium text-gray-600 mr-2">Keywords:</span>
+                      <span className="text-xs font-medium text-gray-600 mr-2">キーワード:</span>
                       {segment.keywords.map((keyword, keywordIndex) => (
                         <span 
                           key={keywordIndex}
@@ -418,10 +411,41 @@ export default function DocumentDetail() {
           ) : (
             <div className="text-center py-8">
               <FileText className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-lg font-medium text-gray-900">No segments found</h3>
+              <h3 className="mt-2 text-lg font-medium text-gray-900">セグメントが見つかりません</h3>
               <p className="mt-1 text-sm text-gray-500">
-                This document has not been segmented yet or segments are still processing.
+                このドキュメントはまだセグメント化されていないか、セグメントが処理中です。
               </p>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {segments && segments.length > 0 && (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+              <div className="text-sm text-gray-500">
+                ページ {currentPage} （{segments.length}件のセグメントを表示）
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePreviousPage}
+                  disabled={currentPage === 1}
+                  className="flex items-center"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  前のページ
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNextPage}
+                  disabled={!segments || segments.length < segmentsPerPage}
+                  className="flex items-center"
+                >
+                  次のページ
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
             </div>
           )}
         </div>
@@ -430,9 +454,9 @@ export default function DocumentDetail() {
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Delete Document</DialogTitle>
+              <DialogTitle>ドキュメントを削除</DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete "{document.name}"? This action cannot be undone and will permanently remove this document from the dataset.
+                本当に"{document.name}"を削除しますか？この操作は元に戻すことができず、データセットからドキュメントが完全に削除されます。
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -440,14 +464,14 @@ export default function DocumentDetail() {
                 variant="outline"
                 onClick={() => setIsDeleteDialogOpen(false)}
               >
-                Cancel
+                キャンセル
               </Button>
               <Button
                 variant="destructive"
                 onClick={confirmDeleteDocument}
                 disabled={deleteDocumentMutation.isPending}
               >
-                {deleteDocumentMutation.isPending ? 'Deleting...' : 'Delete Document'}
+                {deleteDocumentMutation.isPending ? '削除中...' : 'ドキュメントを削除'}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -1,13 +1,17 @@
 import { useState } from "react";
+
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, FileText, Trash2, Plus, Upload } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { ArrowLeft, FileText, Trash2, Plus, Upload, ChevronDown, Settings, RefreshCcw } from "lucide-react";
 import { DifyDocument } from "../../shared/schemas";
 import { useDifyApi } from "../../shared/hooks/useDifyApi";
 import { toast } from "sonner";
+import { defaultProcessRule } from "../../services/constant";
 
 export default function DatasetDetail() {
   const { datasetId } = useParams();
@@ -25,6 +29,11 @@ export default function DatasetDetail() {
   const [documentText, setDocumentText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isCreatingDocument, setIsCreatingDocument] = useState(false);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+
+  // Process rule states
+  const [removeExtraSpaces, setRemoveExtraSpaces] = useState(true);
+  const [removeUrlsEmails, setRemoveUrlsEmails] = useState(false);
 
   const handleDeleteDataset = () => {
     setIsDeleteDialogOpen(true);
@@ -101,7 +110,10 @@ export default function DatasetDetail() {
           body: JSON.stringify({
             name: documentName.trim(),
             text: documentText.trim(),
-            indexing_technique: 'high_quality'
+            indexing_technique: 'high_quality',
+            doc_form: 'text_model',
+            doc_language: 'Japanese',
+            process_rule: defaultProcessRule(removeExtraSpaces, removeUrlsEmails)
           })
         });
       } else {
@@ -109,12 +121,11 @@ export default function DatasetDetail() {
         // Add the file under 'file' key as expected by Dify API
         formData.append('file', selectedFile!);
         
-        // Add configuration as JSON string under 'data' key as expected by Dify API
         const configData = {
           indexing_technique: 'high_quality',
-          process_rule: {
-            mode: 'automatic'
-          }
+          doc_form: 'text_model',
+          doc_language: 'Japanese',
+          process_rule: defaultProcessRule(removeExtraSpaces, removeUrlsEmails)
         };
         formData.append('data', JSON.stringify(configData));
         
@@ -244,6 +255,7 @@ export default function DatasetDetail() {
                 disabled={loadingDocuments || loadingDataset}
                 variant="outline"
               >
+                <RefreshCcw className={`w-4 h-4 mr-2 ${loadingDocuments || loadingDataset ? "animate-spin" : ""}`} />
                 {loadingDocuments || loadingDataset ? "読み込み中..." : "再読み込み"}
               </Button>
               <Button 
@@ -269,25 +281,12 @@ export default function DatasetDetail() {
                       <h3 className="text-lg font-medium text-gray-900">{doc.name}</h3>
                       <div className="mt-2 grid grid-cols-4 gap-4 text-sm text-gray-500">
                         <div>
-                          <span className="font-medium">文字数:</span> {(doc.character_count || 0).toLocaleString()}
+                          <span className="font-medium">文字数:</span> {dataset.word_count}
                         </div>
                         <div>
                           <span className="font-medium">トークン数:</span> {(doc.tokens || 0).toLocaleString()}
                         </div>
-                        <div>
-                          <span className="font-medium">ステータス:</span>
-                          <span className={`ml-1 px-2 py-1 rounded-full text-xs ${
-                            doc.processing_status === 'completed' ? 'bg-green-100 text-green-800' :
-                            doc.processing_status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
-                            doc.processing_status === 'error' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {doc.processing_status === 'completed' ? '完了' :
-                             doc.processing_status === 'processing' ? '処理中' :
-                             doc.processing_status === 'error' ? 'エラー' :
-                             doc.processing_status}
-                          </span>
-                        </div>
+                        
                         <div>
                           <span className="font-medium">インデックス作成:</span>
                           <span className={`ml-1 px-2 py-1 rounded-full text-xs ${
@@ -347,20 +346,6 @@ export default function DatasetDetail() {
                     <span className="font-medium text-gray-700">トークン数:</span>
                     <p className="text-lg font-semibold text-green-600">{(selectedDocument.tokens || 0).toLocaleString()}</p>
                   </div>
-                  <div>
-                    <span className="font-medium text-gray-700">ステータス:</span>
-                    <span className={`ml-1 px-2 py-1 rounded-full text-xs ${
-                      selectedDocument.processing_status === 'completed' ? 'bg-green-100 text-green-800' :
-                      selectedDocument.processing_status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
-                      selectedDocument.processing_status === 'error' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {selectedDocument.processing_status === 'completed' ? '完了' :
-                       selectedDocument.processing_status === 'processing' ? '処理中' :
-                       selectedDocument.processing_status === 'error' ? 'エラー' :
-                       selectedDocument.processing_status}
-                    </span>
-                  </div>
                 </div>
 
                 {selectedDocument.name ? (
@@ -384,7 +369,7 @@ export default function DatasetDetail() {
 
         {/* Add Document Dialog */}
         <Dialog open={isAddDocumentDialogOpen} onOpenChange={setIsAddDocumentDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>新しいドキュメントを追加</DialogTitle>
               <DialogDescription>
@@ -428,6 +413,10 @@ export default function DatasetDetail() {
               {documentType === 'text' && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">テキスト内容</label>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-500">セグメントの区切り文字は<strong className="text-blue-500">***</strong>です。</p>
+                    <Button variant="outline" size="sm" onClick={() => setDocumentText(documentText + '\n***')} className="mt-2">セグメントの区切り文字を追加</Button>
+                  </div>
                   <Textarea
                     value={documentText}
                     onChange={(e) => setDocumentText(e.target.value)}
@@ -455,6 +444,62 @@ export default function DatasetDetail() {
                   )}
                 </div>
               )}
+
+            
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">詳細設定</label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+                      className="text-xs"
+                    >
+                      <Settings className="w-4 h-4 mr-1" />
+                      {showAdvancedSettings ? '設定を隠す' : '詳細設定を表示'}
+                      <ChevronDown className={`w-4 h-4 ml-1 transition-transform ${showAdvancedSettings ? 'rotate-180' : ''}`} />
+                    </Button>
+                  </div>
+
+                  {showAdvancedSettings && (
+                    <div className="space-y-6 p-4 border rounded-lg bg-gray-50">
+                      {/* Process Rules */}
+                      <div className="space-y-4">
+                        <h4 className="font-medium">処理ルール</h4>
+
+                          <div className="space-y-4 p-3 border rounded-md bg-white">
+                            <div className="space-y-3">
+                              <h5 className="font-medium text-sm">前処理ルール</h5>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Switch
+                                  id="remove-extra-spaces"
+                                  checked={removeExtraSpaces}
+                                  onCheckedChange={setRemoveExtraSpaces}
+                                />
+                                <Label htmlFor="remove-extra-spaces" className="text-sm">余分なスペースを削除</Label>
+                              </div>
+
+                              <div className="flex items-center space-x-2">
+                                <Switch
+                                  id="remove-urls-emails"
+                                  checked={removeUrlsEmails}
+                                  onCheckedChange={setRemoveUrlsEmails}
+                                />
+                                <Label htmlFor="remove-urls-emails" className="text-sm">URL・メールアドレスを削除</Label>
+                              </div>
+                            </div>
+
+                          </div>
+                        
+                      </div>
+
+                     
+                    </div>
+                  )}
+                </div>
+       
             </div>
 
             <DialogFooter>

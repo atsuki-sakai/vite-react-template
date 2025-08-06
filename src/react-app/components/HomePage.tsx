@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Database, Plus, Trash2, MoreVertical, Copy, ExternalLink, FileText, Type as Letters, Lock, AppWindow, Cog, BrainCircuit, Calendar, Clock, RefreshCw, TorusIcon, MessageSquare
+  Database, Plus, Trash2, MoreVertical, Copy, ExternalLink, FileText, Type as Letters, Calendar, Clock, RefreshCw, MessageSquare
 } from "lucide-react";
 import { DifyDataset } from "../../shared/schemas";
 import { toast } from "sonner";
@@ -121,12 +121,11 @@ import { useDifyApi } from "../../shared/hooks/useDifyApi";
       <div className="flex flex-col space-y-8">
         {/* Header */}
         <div className="text-center py-6">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">Dify ナレッジベース</h1>
-          <p className="mt-4 text-lg text-gray-600">Difyデータセットを簡単に閲覧・管理できます。</p>
+         
           <div className="mt-6">
             <Button
               onClick={() => navigate('/chat-history')}
-              variant="outline"
+            
               className="flex items-center space-x-2"
             >
               <MessageSquare className="w-4 h-4" />
@@ -139,7 +138,7 @@ import { useDifyApi } from "../../shared/hooks/useDifyApi";
         {/* Content */}
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <h2 className="text-3xl font-semibold tracking-tight">ナレッジデータセット</h2>
+            <h2 className="text-3xl font-semibold tracking-tight">学習データセット</h2>
             <div className="flex space-x-2">
               <Button
                 onClick={async () => {
@@ -366,28 +365,14 @@ import { useDifyApi } from "../../shared/hooks/useDifyApi";
                     <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm text-gray-700 mb-4">
                       <div className="flex items-center space-x-2" title="Document Count">
                         <FileText className="w-4 h-4 text-gray-500" />
-                        <span>{dataset.document_count ?? 0} 文書</span>
+                        <span>{dataset.document_count ?? 0} ドキュメント</span>
                       </div>
                       <div className="flex items-center space-x-2" title="Word Count">
                         <Letters className="w-4 h-4 text-gray-500" />
-                        <span>{(dataset.word_count ?? 0).toLocaleString()} 単語</span>
+                        <span>{(dataset.word_count ?? 0).toLocaleString()} ワード</span>
                       </div>
-                      <div className="flex items-center space-x-2" title="Linked Apps">
-                        <AppWindow className="w-4 h-4 text-gray-500" />
-                        <span>TOP-K: {dataset.retrieval_model_dict?.top_k ?? 0}</span>
-                      </div>
-                      <div className="flex items-center space-x-2" title="Indexing Technique">
-                        <Cog className="w-4 h-4 text-gray-500" />
-                        <span className="truncate">{dataset.retrieval_model_dict?.search_method}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 col-span-2" title="Embedding Model">
-                        <BrainCircuit className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                        <span className="truncate">{dataset.embedding_model} ({dataset.embedding_model_provider})</span>
-                      </div>
-                      <div className="flex items-center space-x-2" title="Data Source Type">
-                        <TorusIcon className="w-4 h-4 text-gray-500" />
-                        <span className="truncate">{dataset.retrieval_model_dict?.score_threshold} threshold</span>
-                      </div>
+                      
+                      
                     
                     </div>
                   </div>
@@ -402,10 +387,7 @@ import { useDifyApi } from "../../shared/hooks/useDifyApi";
                         <Clock className="w-3.5 h-3.5" />
                         <span>{formatDate(dataset.updated_at ?? 0)}</span>
                       </div>
-                      <div className="flex items-center space-x-2" title="Permission">
-                        <Lock className="w-3.5 h-3.5" />
-                        <span className="capitalize">{dataset.permission}</span>
-                      </div>
+                      
                     </div>
                   </div>
                 </div>

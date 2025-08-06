@@ -46,45 +46,45 @@ export default function SegmentEditDialog({ isOpen, onOpenChange, segment, onSub
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{segment ? 'Edit Segment' : 'Create Segment'}</DialogTitle>
+          <DialogTitle>{segment ? 'セグメントを編集' : 'セグメントを作成'}</DialogTitle>
           <DialogDescription>
-            {segment ? 'Edit the details of this segment.' : 'Create a new segment for this document.'}
+            {segment ? 'このセグメントの詳細を編集します。' : 'このドキュメント用の新しいセグメントを作成します。'}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <label htmlFor="content">Content</label>
+            <label htmlFor="content">内容</label>
             <Textarea
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Enter segment content"
+              placeholder="セグメントの内容を入力してください"
               className="h-32"
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="answer">Answer (optional)</label>
+            <label htmlFor="answer">回答（任意）</label>
             <Textarea
               id="answer"
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
-              placeholder="Enter an answer for Q&A"
+              placeholder="Q&A用の回答を入力してください"
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="keywords">Keywords (comma-separated)</label>
+            <label htmlFor="keywords">キーワード（カンマ区切り）</label>
             <Input
               id="keywords"
               value={keywords}
               onChange={(e) => setKeywords(e.target.value)}
-              placeholder="e.g., keyword1, keyword2"
+              placeholder="例：キーワード1, キーワード2"
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>キャンセル</Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : 'Save'}
+            {isSubmitting ? '保存中...' : '保存'}
           </Button>
         </DialogFooter>
       </DialogContent>
