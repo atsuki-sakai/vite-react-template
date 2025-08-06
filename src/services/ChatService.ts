@@ -53,6 +53,38 @@ export class ChatService {
 
     return response.json();
   }
+
+  async updateChatMessage(id: number, difyResponse: string): Promise<{ success: boolean; data: ChatMessage }> {
+    const response = await fetch(`${this.baseUrl}/chat/messages/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ dify_response: difyResponse }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update chat message: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  async deleteChatMessages(ids: number[]): Promise<{ success: boolean; deleted: number }> {
+    const response = await fetch(`${this.baseUrl}/chat/messages/batch`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ids }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete chat messages: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
+  }
 }
 
 export const chatService = new ChatService();

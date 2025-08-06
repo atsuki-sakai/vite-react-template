@@ -503,7 +503,11 @@ export class DifyService {
     if (!formData.has('data')) {
       // Add default data configuration if not provided
       const defaultConfig = {
+        original_document_id: '1234567890',
         indexing_technique: 'high_quality',
+        doc_form: {
+          
+        },
         process_rule: {
           mode: 'automatic'
         }
@@ -725,9 +729,9 @@ export class DifyService {
   }
 
   /**
-   * Get document segments (chunks)
+   * Get document segments (chunks) with pagination support
    */
-  async getDocumentSegments(datasetId: string, documentId: string): Promise<DifyApiResponse<DifySegment[]>> {
+  async getDocumentSegments(datasetId: string, documentId: string, page: number = 1, limit: number = 20): Promise<DifyApiResponse<DifySegment[]>> {
     if (!datasetId?.trim() || !documentId?.trim()) {
       console.error('[DifyService] getDocumentSegments - Dataset ID and Document ID are required');
       return {
@@ -736,10 +740,18 @@ export class DifyService {
       };
     }
 
+    if (page < 1 || limit < 1 || limit > 100) {
+      console.error('[DifyService] getDocumentSegments - Invalid pagination parameters:', { page, limit });
+      return {
+        error: 'Invalid pagination parameters',
+        message: 'Page must be >= 1 and limit must be between 1 and 100'
+      };
+    }
+
     return this.makeRequest<DifySegment[]>(
-      `/datasets/${datasetId}/documents/${documentId}/segments`,
+      `/datasets/${datasetId}/documents/${documentId}/segments?page=${page}&limit=${limit}`,
       { method: 'GET' },
-      `Get segments for document ${documentId} in dataset ${datasetId}`
+      `Get segments for document ${documentId} in dataset ${datasetId} (page ${page}, limit ${limit})`
     );
   }
 
