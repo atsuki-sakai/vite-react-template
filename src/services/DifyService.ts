@@ -232,12 +232,14 @@ export class DifyService {
       });
 
       const inputs = {
-        isFirst: isFirstMessage ? 1 : 0,
-        customerName: variableContext.customerName,
-        phone: variableContext.phone,
-        reservationDateAndTime: variableContext.reservationDateAndTime,
-        menuName: variableContext.menuName,
-        featureImage: variableContext.featureImage,
+        conversation: {
+          isFirst: isFirstMessage,
+          customerName: variableContext.customerName,
+          phone: variableContext.phone,
+          reservationDateAndTime: variableContext.reservationDateAndTime,
+          menuName: variableContext.menuName,
+          featureImage: variableContext.featureImage,
+        }
       };
 
       // 詳細ログ: 生成されたinputs
