@@ -423,6 +423,10 @@ const ChatHistory: React.FC = () => {
                               <MessageSquare className="h-3 w-3" />
                               {message.conversation_id}
                             </div>
+                            <div className="text-xs text-gray-500 flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {formatDate(message.created_at)}
+                            </div>
                           </div>
 
                           {message.message_content && (
@@ -496,11 +500,6 @@ const ChatHistory: React.FC = () => {
                               )}
                             </div>
                           )}
-                        </div>
-
-                        <div className="text-xs text-gray-500 flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {formatDate(message.created_at)}
                         </div>
                       </div>
                     </CardContent>
