@@ -18,11 +18,6 @@ import {
   PREMIUM_FEATURE_MESSAGES,
   API_ERROR_CODES,
 } from "../shared";
-import { 
-  generateDifyInputs, 
-  debugLogInputs,
-  type ConversationVariableContext 
-} from "../config/dify-variables";
 import type { AIResponse } from "../worker/types";
 import type { D1Database } from "@cloudflare/workers-types";
 import type { Workflow } from "@cloudflare/workers-types";
@@ -207,25 +202,9 @@ export class DifyService {
     }
     
     try {
-      // Generate dynamic inputs using the conversation variables system
-      const context: ConversationVariableContext = {
-        conversationId,
-        userId,
-        customerName: "",
-        phone: "",
-        reservationDateAndTime: "",
-        menuName: "",
-        llmContext: [],
-        userContext: [],
-        timestamp: new Date().toISOString()
-      };
-
-      const inputs = generateDifyInputs(context);
-      debugLogInputs(inputs, context);
 
       const requestBody = {
-        debug: true,
-        inputs,
+        inputs: {},
         query: message,
         response_mode: "blocking",
         user: userId,

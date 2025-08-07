@@ -27,7 +27,6 @@ export type VariableGenerator<T = any> = (context: ConversationVariableContext) 
  * and returns the appropriate value for that variable.
  */
 export const DIFY_CONVERSATION_VARIABLES = {
-  conversation: {
     // 初回会話判定 - "true": 初回, "false": 継続
     isFirst: (context: ConversationVariableContext): string => {
       return (!context.conversationId || context.conversationId.trim() === "") ? "true" : "false";
@@ -62,7 +61,6 @@ export const DIFY_CONVERSATION_VARIABLES = {
     user_context: (context: ConversationVariableContext): string[] => {
       return context.userContext || [];
     },
-  }
 }
 
 /**
@@ -112,26 +110,18 @@ export function generateDifyInputs(
  * @param context - コンテキスト情報
  * @returns 初回会話用のinputsオブジェクト
  * 
- * **以下の形式はDifyアプリケーション側では使用できないことを確認した**
-  'conversation.is_first',
-  'conversation.customer_name',
-  'conversation.phone',
-  'conversation.reservation_date_and_time',
-  'conversation.menu_name',
-  'conversation.llm_context',
-  'conversation.user_context'
  */
 export function generateInitialConversationInputs(
   context: ConversationVariableContext
 ): Record<string, any> { // eslint-disable-line @typescript-eslint/no-explicit-any
   return generateDifyInputs(context, [
-    'conversation.isFirst',
-    'conversation.customer_name',
-    'conversation.phone',
-    'conversation.reservation_date_and_time',
-    'conversation.menu_name',
-    'conversation.llm_context',
-    'conversation.user_context'
+    'isFirst',
+    'customer_name',
+    'phone',
+    'reservation_date_and_time',
+    'menu_name',
+    'llm_context',
+    'user_context'
   ]);
 }
 
@@ -146,13 +136,13 @@ export function generateContinuationInputs(
   context: ConversationVariableContext 
 ): Record<string, any> { // eslint-disable-line @typescript-eslint/no-explicit-any
   return generateDifyInputs(context, [
-    'conversation.isFirst',
-    'conversation.customer_name',
-    'conversation.phone',
-    'conversation.reservation_date_and_time',
-    'conversation.menu_name',
-    'conversation.llm_context',
-    'conversation.user_context'
+    'isFirst',
+    'customer_name',
+    'phone',
+    'reservation_date_and_time',
+    'menu_name',
+    'llm_context',
+    'user_context'
   ]);
 }
 
