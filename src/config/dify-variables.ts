@@ -29,7 +29,7 @@ export type VariableGenerator<T = any> = (context: ConversationVariableContext) 
 export const DIFY_CONVERSATION_VARIABLES = {
   conversation: {
     // 初回会話判定 - "true": 初回, "false": 継続
-    is_first: (context: ConversationVariableContext): string => {
+    isFirst: (context: ConversationVariableContext): string => {
       return (!context.conversationId || context.conversationId.trim() === "") ? "true" : "false";
     },
     
@@ -53,7 +53,6 @@ export const DIFY_CONVERSATION_VARIABLES = {
       return context.menuName || "";
     },
     
-   
     // LLMが顧客に返答した内容の要約を保存する配列
     llm_context: (context: ConversationVariableContext): string[] => {
       return context.llmContext || [];
@@ -126,13 +125,13 @@ export function generateInitialConversationInputs(
   context: ConversationVariableContext
 ): Record<string, any> { // eslint-disable-line @typescript-eslint/no-explicit-any
   return generateDifyInputs(context, [
-    'is_first',
-    'customer_name',
-    'phone',
-    'reservation_date_and_time',
-    'menu_name',
-    'llm_context',
-    'user_context'
+    'conversation.isFirst',
+    'conversation.customer_name',
+    'conversation.phone',
+    'conversation.reservation_date_and_time',
+    'conversation.menu_name',
+    'conversation.llm_context',
+    'conversation.user_context'
   ]);
 }
 
@@ -147,13 +146,13 @@ export function generateContinuationInputs(
   context: ConversationVariableContext 
 ): Record<string, any> { // eslint-disable-line @typescript-eslint/no-explicit-any
   return generateDifyInputs(context, [
-    'is_first',
-    'customer_name',
-    'phone',
-    'reservation_date_and_time',
-    'menu_name',
-    'llm_context',
-    'user_context'
+    'conversation.isFirst',
+    'conversation.customer_name',
+    'conversation.phone',
+    'conversation.reservation_date_and_time',
+    'conversation.menu_name',
+    'conversation.llm_context',
+    'conversation.user_context'
   ]);
 }
 

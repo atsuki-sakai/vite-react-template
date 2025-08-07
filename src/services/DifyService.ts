@@ -12,13 +12,17 @@ import {
   validateCreateDocumentByTextRequest,
   safeParseDifyDataset,
   safeParseDifyDocument,
-  DifyChatRequest,
+  // DifyChatRequest,
   DifyChatResponse,
   FEATURE_FLAGS,
   PREMIUM_FEATURE_MESSAGES,
   API_ERROR_CODES,
 } from "../shared";
-import { ConversationVariableContext, generateDifyInputs } from "../config/dify-variables";
+import { 
+  generateDifyInputs, 
+  debugLogInputs,
+  type ConversationVariableContext 
+} from "../config/dify-variables";
 import type { AIResponse } from "../worker/types";
 import type { D1Database } from "@cloudflare/workers-types";
 import type { Workflow } from "@cloudflare/workers-types";
@@ -205,26 +209,30 @@ export class DifyService {
     try {
       // Generate dynamic inputs using the conversation variables system
       const context: ConversationVariableContext = {
-        conversationId: conversationId,
-        userId: userId,
-        isFirst: conversationId ? "false" : "true",
+        conversationId,
+        userId,
         customerName: "",
         phone: "",
         reservationDateAndTime: "",
         menuName: "",
         llmContext: [],
-        userContext: []
+        userContext: [],
+        timestamp: new Date().toISOString()
       };
 
-      const requestBody: DifyChatRequest = {
-        inputs: generateDifyInputs(context),
+      const inputs = generateDifyInputs(context);
+      debugLogInputs(inputs, context);
+
+      const requestBody = {
+        debug: true,
+        inputs,
         query: message,
         response_mode: "blocking",
         user: userId,
         conversation_id: conversationId,
       };
 
-      console.log("requestBody: ", requestBody);
+      console.log("[DifyService] Sending to Dify API:", JSON.stringify(requestBody, null, 2));
 
       // タイムアウト制御付きでfetch実行
       const controller = new AbortController();
@@ -242,6 +250,7 @@ export class DifyService {
       console.log("response: ", response);
       
       clearTimeout(timeoutId);
+
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -287,7 +296,7 @@ export class DifyService {
         return { answer: "申し訳ございません。応答に時間がかかりすぎています。もう一度お試しください。" };
       }
       console.error(`[DifyService] processMessage - Unexpected error after ${duration}ms:`, error);
-      return { answer: "申し訳ございます。一時的にサービスが利用できません。" };
+      return { answer: "申し訳ございません。一時的にサービスが利用できません。" };
     }
   }
 
