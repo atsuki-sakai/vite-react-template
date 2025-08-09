@@ -47,6 +47,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `wrangler d1 execute DB --local --command="SELECT * FROM table_name"` - Execute SQL queries locally
 - `wrangler d1 execute DB --remote --command="SELECT * FROM table_name"` - Execute SQL queries on production
 
+#### リモートD1データをローカルに移行する方法
+リモートのD1データベースからローカルD1データベースにデータを移行する手順：
+
+1. **リモートデータベースのテーブル一覧を確認**
+   ```bash
+   wrangler d1 execute DB --remote --command="SELECT name FROM sqlite_master WHERE type='table';"
+   ```
+
+2. **リモートデータを取得**
+   ```bash
+   wrangler d1 execute DB --remote --command="SELECT * FROM table_name;"
+   ```
+
+3. **ローカルデータベースにデータを挿入**
+   ```bash
+   wrangler d1 execute DB --local --command="INSERT INTO table_name (column1, column2, ...) VALUES (value1, value2, ...);"
+   ```
+
+4. **ローカルでのデータ確認**
+   ```bash
+   wrangler d1 execute DB --local --command="SELECT * FROM table_name;"
+   ```
+
+**注意点:**
+- 認証エラーが発生する場合は、wrangler exportの代わりにSQL文を使った手動移行を行う
+- 大量データの場合は複数回に分けてINSERT文を実行する
+- NULL値は文字列として`null`を指定する
+
 ## Architecture Overview
 
 This is a full-stack React application designed to run on Cloudflare Workers with comprehensive integrations:
